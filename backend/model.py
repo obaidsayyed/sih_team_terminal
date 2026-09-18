@@ -2,13 +2,14 @@ import pandas as pd
 import glob
 import xgboost as xgb
 import optuna
+import json
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
 
 def load_data():
     # Load the completely mixed (noisy + clean) dataset
-    df = pd.read_csv(r'C:\Users\Admin\Desktop\sih26160\combined_dataset.csv')
+    df = pd.read_csv(r'C:\Users\Admin\Desktop\sih26160\backend\combined_dataset.csv')
     print(f"Loaded {len(df)} total records from combined_dataset.csv.")
     return df
 
@@ -113,3 +114,13 @@ if __name__ == "__main__":
     y_test_pred = final_model.predict(X_test)
     y_test_prob = final_model.predict_proba(X_test)
     print_metrics(y_test, y_test_pred, y_test_prob, "TESTING DATA")
+    
+    # 8. Save Model and Encoders for Backend use
+    print("\nSaving final model to 'xgboost_model.json'...")
+    final_model.save_model('xgboost_model.json')
+    
+    # Save the label encoder classes to a JSON file
+    le_classes = le.classes_.tolist()
+    with open('label_encoder_classes.json', 'w') as f:
+        json.dump(le_classes, f)
+    print("Saved label encoder classes to 'label_encoder_classes.json'.")

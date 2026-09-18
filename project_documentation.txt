@@ -5,9 +5,11 @@ PROJECT DOCUMENTATION: P.A.R.S.E (Packet Analyser and Risk Scoring Engine)
 TEAM DETAILS:
 - Team Name: Team Terminal
 - Problem Statement (PS) No: SIH26160
+- Document Last Updated: 2026-09-19 02:15 AM IST
 
 ------------------------------------------------------
 1. PROJECT OVERVIEW & DATA COLLECTION
+[Started: 2026-09-18 10:25 PM IST]
 ------------------------------------------------------
 The objective of this project is to build a robust Machine Learning model (XGBoost) capable of classifying encrypted network traffic (e.g., distinguishing between web, video, VoIP, ICMP, and email) based purely on packet statistics, without decrypting the payload. 
 
@@ -17,6 +19,7 @@ DATASET COMPOSITION (~233,870 Total Records):
 
 ------------------------------------------------------
 2. PHASE 1: THE PERFECT BASELINE DATASET
+[Completed: 2026-09-18 10:45 PM IST]
 ------------------------------------------------------
 Initially, a "near-to-perfect" clean dataset (representing ~30% of our final master dataset) was constructed. This dataset captured pristine network behaviors where protocols adhered perfectly to their theoretical boundaries:
 - Video traffic consistently exhibited massive packet counts (1900+) and large sizes.
@@ -27,6 +30,7 @@ We trained an initial XGBoost model on this pristine data and discovered a major
 
 ------------------------------------------------------
 3. PHASE 2: INDUCING NOISE FOR REAL-WORLD SIMULATION
+[Completed: 2026-09-18 11:00 PM IST]
 ------------------------------------------------------
 To ensure the model could generalize to actual, unpredictable network environments, we shifted our methodology to a 70-30 Noisy-Clean data distribution.
 
@@ -37,6 +41,7 @@ We generated a "Noisy" dataset representing 70% of our final data pool. This noi
 
 ------------------------------------------------------
 4. PHASE 3: FINAL TRAINING AND EVALUATION
+[Completed: 2026-09-18 11:20 PM IST]
 ------------------------------------------------------
 The 30% clean baseline and 70% noisy datasets were merged and entirely randomized into a single master dataset. 
 
@@ -49,3 +54,40 @@ Final Evaluation Results:
 
 CONCLUSION:
 By actively degrading our dataset with real-world noise, we successfully prevented the model from memorizing pristine lab conditions. The identical Train/Test accuracy and the 93%+ score prove that the model is highly robust, generalizes beautifully to unseen edge cases, and is fully prepared for real-world IDS (Intrusion Detection System) deployment.
+
+------------------------------------------------------
+5. PHASE 4: REAL-TIME INTRUSION DETECTION & RISK SCORING ENGINE
+[Completed: 2026-09-19 01:50 AM IST]
+------------------------------------------------------
+To transition from a static dataset analysis to a real-time risk scoring engine, a full-stack application was constructed to capture packets, analyze them using the trained XGBoost model, and display the risk assessment.
+
+ARCHITECTURAL DECISIONS:
+
+1. Packet Capture System (tshark vs. Scapy)
+   - Options: `Scapy` (Python library), `tshark` (command-line Wireshark), or native `libpcap`/`Npcap` bindings.
+   - Decision: `tshark` was chosen.
+   - Rationale: While Scapy is excellent for programmatic packet manipulation, `tshark` is heavily optimized for robust, high-performance packet capture and statistical generation. Live capture requires the Npcap driver and UAC Elevation (Administrator rights), which we bypassed for seamless UX by un-restricting the Npcap driver and allowing dynamic Wi-Fi adapter targeting.
+
+2. Backend Framework (FastAPI vs. Flask/Django)
+   - Options: Flask, Django, FastAPI.
+   - Decision: FastAPI (Python).
+   - Rationale: FastAPI provides built-in asynchronous support, auto-generated documentation, and superior performance. Background ThreadPoolExecutors were utilized to cleanly run synchronous pyshark operations without event loop collisions.
+
+3. Frontend Framework (React + Vite vs. Plain HTML/Vanilla JS)
+   - Options: Plain HTML/JS, Next.js, React + Vite.
+   - Decision: React with Vite.
+   - Rationale: The system requires a dynamic dashboard that frequently updates with new capture statistics. Vite's HMR provides instantaneous UI testing, and React allows seamless state management for real-time live packet parsing data.
+
+4. Decoupled Risk Scoring Engine (RSE)
+   - Architecture: The system was deliberately decoupled. The XGBoost model acts ONLY as a classifier for the traffic type (e.g., "Web", "Video"). A secondary, custom heuristic backend engine (the RSE) calculates a dynamic risk score (0-100) based on deep statistical anomalies (e.g., mismatching payload sizes vs. packet volumes), completely independently of the XGBoost confidence score.
+
+------------------------------------------------------
+6. PENDING INTEGRATIONS
+[Status: IN PROGRESS as of 2026-09-19 02:15 AM IST]
+------------------------------------------------------
+The core Machine Learning engine and packet sniffers are fully functional. The final pipeline steps currently remaining are:
+
+1. Supabase Table Creation: 
+   - We need to configure the PostgreSQL database schema in Supabase to securely log historical anomalies and metadata. (Note: Raw `.pcap` files are deleted instantly to preserve privacy; only metadata is logged).
+2. Auth Integration: 
+   - Implementation of secure sign-in flows (e.g., Supabase Auth / JWT) so the dashboard can only be accessed by authorized system administrators.
