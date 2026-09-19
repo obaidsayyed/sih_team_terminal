@@ -14,6 +14,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from supabase import create_client, Client
 from dotenv import load_dotenv
 from pydantic import BaseModel
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 load_dotenv()
 
@@ -26,6 +29,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Initialize Supabase
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
@@ -102,7 +109,8 @@ async def startup_event():
         print("WARNING: Backend is not running as Administrator. Packet capture may fail if Npcap is restricted.")
 
 @app.get("/api/hardware-id")
-def get_hardware_id():
+@limiter.limit("10/minute")
+def get_hardware_id(request: Request):
     mac_num = uuid.getnode()
     mac = ':'.join(('%012X' % mac_num)[i:i+2] for i in range(0, 12, 2)).upper()
     return {"mac_address": mac}
@@ -114,6 +122,7 @@ def extract_token(request: Request):
     return None
 
 @app.post("/api/capture/start")
+@limiter.limit("5/minute")
 def start_capture(request: Request):
     global capture_process
     if capture_process is not None:
@@ -318,6 +327,7 @@ def process_pcap_and_score(token: str = None):
     return metadata
 
 @app.post("/api/capture/stop")
+@limiter.limit("5/minute")
 def stop_capture(request: Request, background_tasks: BackgroundTasks):
     global capture_process
     if capture_process is None:
@@ -338,12 +348,14 @@ def stop_capture(request: Request, background_tasks: BackgroundTasks):
     return {"status": "processing_started"}
 
 @app.get("/api/progress")
-async def get_progress():
+@limiter.limit("5/second")
+def get_progress(request: Request):
     global processing_state
     return processing_state
 
 @app.get("/api/status")
-async def get_status():
+@limiter.limit("10/minute")
+def get_status(request: Request):
     global capture_process
     is_running = capture_process is not None
     return {"is_running": is_running}

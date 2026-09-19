@@ -39,9 +39,25 @@ function Dashboard() {
   const [history, setHistory] = useState<PacketMetadata[]>([]);
   const [error, setError] = useState<string | null>(null);
   
-  // Progress State
+  // Progress & Throttling State
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [authCooldown, setAuthCooldown] = useState(0);
+  const [captureCooldown, setCaptureCooldown] = useState(0);
+
+  useEffect(() => {
+    if (authCooldown > 0) {
+      const timer = setTimeout(() => setAuthCooldown(authCooldown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [authCooldown]);
+
+  useEffect(() => {
+    if (captureCooldown > 0) {
+      const timer = setTimeout(() => setCaptureCooldown(captureCooldown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [captureCooldown]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -128,6 +144,8 @@ function Dashboard() {
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (authCooldown > 0) return;
+    
     setAuthError('');
     if (isSignUp) {
       if (!name.trim()) {
@@ -139,11 +157,18 @@ function Dashboard() {
         password,
         options: { data: { name: name.trim() } }
       });
-      if (error) setAuthError(error.message);
-      else setAuthError('Check your email for the confirmation link!');
+      if (error) {
+        setAuthError(error.message);
+        setAuthCooldown(3);
+      } else {
+        setAuthError('Check your email for the confirmation link!');
+      }
     } else {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) setAuthError(error.message);
+      if (error) {
+        setAuthError(error.message);
+        setAuthCooldown(3);
+      }
     }
   };
 
@@ -185,6 +210,7 @@ function Dashboard() {
   };
 
   const startCapture = async () => {
+    if (captureCooldown > 0) return;
     setLoading(true);
     setError(null);
     try {
@@ -223,11 +249,13 @@ function Dashboard() {
             setCurrentResult(data.result);
             setHistory(prev => [data.result, ...prev].slice(0, 50));
             setLoading(false);
+            setCaptureCooldown(3);
           } else if (data.status === 'error') {
             clearInterval(pollProgress);
             setIsProcessing(false);
             setError(data.error_detail || "Analysis failed.");
             setLoading(false);
+            setCaptureCooldown(3);
           }
         } catch (err) {
           console.error("Progress polling failed", err);
@@ -284,7 +312,7 @@ function Dashboard() {
               style={{ padding: '0.75rem', borderRadius: '6px', border: '1px solid #444', background: '#222', color: 'white' }}
             />
             {authError && <div style={{ color: 'var(--danger-color)', fontSize: '0.9rem' }}>{authError}</div>}
-            <button type="submit" className="btn-primary" style={{ padding: '0.75rem' }}>
+            <button type="submit" className="btn-primary" style={{ padding: '0.75rem', opacity: authCooldown > 0 ? 0.5 : 1 }} disabled={authCooldown > 0}>
               {isSignUp ? 'Sign Up' : 'Log In'}
             </button>
           </form>
@@ -423,9 +451,10 @@ function Dashboard() {
               <button 
                 className="btn-primary" 
                 onClick={startCapture} 
-                disabled={isRunning || loading}
+                disabled={isRunning || loading || captureCooldown > 0}
+                style={{ opacity: captureCooldown > 0 ? 0.5 : 1 }}
               >
-                <Play size={18} /> Start Capture
+                <Play size={18} /> {captureCooldown > 0 ? `Wait ${captureCooldown}s...` : 'Start Capture'}
               </button>
               <button 
                 className="btn-danger" 

@@ -193,7 +193,34 @@ THE APPROACH & LOGIC:
   - For existing users (grandfathered in without a name), the system halts the dashboard load and forces an "Action Required" screen, demanding their name before they can proceed.
 
 ------------------------------------------------------
-10. PENDING INTEGRATIONS
-[Status: COMPLETED as of 2026-09-20 02:00 AM IST]
+10. PHASE 9: COMPREHENSIVE RATE LIMITING & API THROTTLING
+[Completed: 2026-09-20 02:25 AM IST]
 ------------------------------------------------------
-All major milestones, including the ML model, live packet capturing, real-time risk scoring, asynchronous progress architecture, premium frontend landing page, and strict hardware authentication have been successfully built, documented, and integrated.
+To fortify P.A.R.S.E against API abuse, brute-forcing, and accidental spam-clicking, a double-layer security approach combining Backend Rate Limiting and Frontend UI Throttling was implemented.
+
+THE PROBLEM:
+1. Backend Vulnerability: The heavy machine learning engine (XGBoost) and the tshark process are computationally expensive. A malicious actor (or an accidental double-click) could flood the endpoints (`/api/capture/start`), crashing the Python server or the host machine via DDoS.
+2. Frontend Vulnerability: Authentication flows (Login/Signup) are susceptible to brute-force attacks if users can submit passwords infinitely fast.
+
+THE APPROACH & LOGIC:
+- Backend Limits (FastAPI `slowapi`): We introduced IP-based rate limiting to all backend routes. If limits are breached, the server intercepts the request and responds with a `429 Too Many Requests` error.
+- Frontend Throttling (React State): We introduced strict state-based cooldown timers that physically lock the UI buttons, forcing the user to slow down and wait, naturally disrupting brute-force scripts before they even hit the API limits.
+
+CHANGES IMPLEMENTED:
+1. Backend (`main.py` & `requirements.txt`):
+   - Installed `slowapi` and its dependencies (captured via `pip freeze`).
+   - Integrated the `slowapi` Limiter into FastAPI.
+   - Applied specific quotas to routes:
+     - `/api/capture/start` & `/stop`: Capped at 5 requests/minute.
+     - `/api/hardware-id` & `/status`: Capped at 10 requests/minute.
+     - `/api/progress`: Capped at 5 requests/second (fast enough for the UI animation, slow enough to block bot spam).
+2. Frontend (`Dashboard.tsx` & `requirements.txt`):
+   - Extracted all dependencies to a static `requirements.txt` to strictly map the frontend ecosystem.
+   - Added an `authCooldown` timer (3 seconds) that disables the Login/Signup button upon failure.
+   - Added a `captureCooldown` timer (3 seconds) that locks the "Start Capture" button after an analysis finishes, completely eliminating accidental double-clicks.
+
+------------------------------------------------------
+11. PENDING INTEGRATIONS
+[Status: COMPLETED as of 2026-09-20 02:25 AM IST]
+------------------------------------------------------
+All major milestones, including the ML model, live packet capturing, real-time risk scoring, asynchronous progress architecture, premium frontend landing page, strict hardware authentication, and comprehensive rate limiting have been successfully built, documented, and integrated.
