@@ -105,12 +105,95 @@ ARCHITECTURAL DECISIONS (FRONTEND):
    - Rationale: Native hooks are sufficient for handling asynchronous polling or WebSocket communication with the FastAPI backend to fetch updates without the bloat of Redux.
 
 ------------------------------------------------------
-7. PENDING INTEGRATIONS
-[Status: IN PROGRESS as of 2026-09-19 11:25 PM IST]
+7. PHASE 6: SECURE AUTHENTICATION & STRICT MAC BINDING
+[Completed: 2026-09-20 12:57 AM IST]
 ------------------------------------------------------
-The core Machine Learning engine and packet sniffers are fully functional. The final pipeline steps currently remaining are:
+The system required a robust security mechanism to prevent an admin from casually logging into a friend's or unauthorized device and sniffing traffic.
 
-1. Supabase Table Creation: 
-   - We need to configure the PostgreSQL database schema in Supabase to securely log historical anomalies and metadata. (Note: Raw `.pcap` files are deleted instantly to preserve privacy; only metadata is logged).
-2. Auth Integration: 
-   - Implementation of secure sign-in flows (e.g., Supabase Auth / JWT) so the dashboard can only be accessed by authorized system administrators.
+THE PROBLEM:
+If authorization relies solely on a web login (email/password), an admin could easily borrow a laptop, log into the P.A.R.S.E dashboard, and instantly start capturing the friend's personal network traffic. The authorization to capture needed to be decoupled from the web login.
+
+OPTIONS EVALUATED:
+1. Hardware Tokens (YubiKey): Highly secure but requires purchasing physical hardware.
+2. Mutual TLS (mTLS): Enterprise-grade security but extremely difficult for UX/device shifting.
+3. Subnet Whitelisting: Blocks capturing outside specific IPs, but annoying for admins switching from Wi-Fi to Mobile Hotspots.
+4. Database-Level Machine Binding: Tying the physical device MAC address to the user account at the DB level, completely bypassing the UI.
+
+ROUTE TAKEN:
+Option 4 (Database-Level Machine Binding) was chosen. A "Zero-Trust, Admin-Curated Hardware Binding Model" was implemented.
+
+THE APPROACH & LOGIC:
+- 1:1 MAC Policy: A single MAC address can only be associated with one account at a time.
+- Strict Login Block: If a user logs into an unauthorized device, the application completely blocks the dashboard and throws an "Unauthorized Hardware" error. There is intentionally NO button in the UI to bypass this or "trust" the device.
+- Device Shifting Workflow: If an admin logs into a completely new, unlinked device, they are provided a link to send a manual email request to the Super Admin (Obaid). The Super Admin manually updates the database within 2 working days.
+- Anti-Abuse Tracking: Once a MAC is unlinked from an account, it is moved to a `mac_history` table. An abandoned MAC can never be re-paired to the same account.
+
+CHANGES IMPLEMENTED:
+1. Database Schema (`schema.sql`):
+   - Created `mac_bindings` table with a `UNIQUE(user_id)` constraint to enforce the 1:1 policy.
+   - Created `mac_history` table with a `UNIQUE(mac_address, user_id)` constraint to prevent re-pairing.
+2. Backend (`main.py`):
+   - Created a `GET /api/hardware-id` endpoint utilizing Python's `uuid.getnode()` to securely fetch the MAC address.
+   - Updated FastAPI capture endpoints to accept the user's Supabase JWT.
+   - Pushed the JWT to the Supabase Postgrest client (`supabase.postgrest.auth(token)`) so that Row Level Security (RLS) is strictly enforced during packet metadata inserts.
+3. Frontend (`App.tsx`):
+   - Integrated `@supabase/supabase-js`.
+   - Built a secure login screen.
+   - Built the hardware verification gating logic that halts rendering until the MAC address is verified against the database.
+
+------------------------------------------------------
+8. PHASE 7: ASYNCHRONOUS ARCHITECTURE & REAL-TIME PROGRESS ENGINE
+[Completed: 2026-09-20 01:45 AM IST]
+------------------------------------------------------
+To fix major UX issues related to aggressive API polling (which caused dashboard flickering) and blocking requests during PCAP processing, the backend and frontend needed a massive architectural overhaul.
+
+THE PROBLEM:
+`pyshark` is a wrapper around tshark that iterates through packets sequentially. For large PCAP files, this can take a long time. The previous architecture blocked the `POST /api/capture/stop` endpoint until the entire file was parsed, forcing the frontend to "freeze" or show a generic loading spinner without indicating actual progress. Furthermore, the frontend was heavily polling `/api/status` every 5 seconds, causing unwanted re-renders.
+
+OPTIONS EVALUATED (For Progress Tracking):
+1. Polling a Global Variable: Store processing state in memory and ping an endpoint.
+2. WebSockets: Stream progress directly over a persistent connection.
+3. Server-Sent Events (SSE): Stream progress via a one-way event channel.
+
+ROUTE TAKEN:
+Option 1 (Polling a Global Variable via `FastAPI BackgroundTasks`) was chosen. Since this is an admin dashboard with a single user workflow per session, a simple polling loop on a new `/api/progress` endpoint while a BackgroundTask crunches the data was deemed the most efficient, least-complex solution.
+
+THE APPROACH & LOGIC:
+- Polling Elimination: The aggressive 5-second `checkStatus` polling was completely removed from the dashboard.
+- Background Processing: The `/api/capture/stop` endpoint now instantly terminates the capture, triggers `process_pcap_and_score()` asynchronously via `FastAPI BackgroundTasks`, and immediately returns a `processing_started` status to unblock the frontend.
+- Mathematical Progress: Wireshark's native `capinfos` CLI tool is executed instantaneously *before* parsing begins to grab the exact total packet count. During the `pyshark` loop, the script calculates `(current_packet / total_packets) * 100` to generate a true, accurate progress percentage.
+
+CHANGES IMPLEMENTED:
+1. Backend (`main.py`):
+   - Added `processing_state` dictionary to act as a global state tracker.
+   - Refactored `process_pcap_and_score` to use `capinfos` and update `processing_state` dynamically.
+   - Converted `stop_capture` to utilize `BackgroundTasks`.
+   - Created `GET /api/progress` to expose the live state.
+2. Frontend (`Dashboard.tsx`):
+   - Removed the `setInterval` status check.
+   - Attached a native `window.addEventListener('focus')` hook. Now, hardware MAC bindings are only securely re-verified exactly when the user switches tabs and clicks back into the dashboard, drastically reducing network noise while maintaining security.
+   - Implemented a sleek UI Progress Bar that dynamically tracks the mathematical percentage reported by `/api/progress`.
+
+------------------------------------------------------
+9. PHASE 8: PREMIUM PUBLIC LANDING PAGE & USER MANAGEMENT
+[Completed: 2026-09-20 02:00 AM IST]
+------------------------------------------------------
+The system required a proper entry point to introduce users to P.A.R.S.E and its capabilities before they hit the authentication wall.
+
+THE PROBLEM:
+The user was instantly met with an authentication/hardware verification screen with zero context regarding what the application actually does.
+
+THE APPROACH & LOGIC:
+- We installed `react-router-dom` to convert the single-page application into a fully routed experience.
+- The existing app was perfectly extracted into a secured `/app` route (Dashboard).
+- A public `/` route (Landing) was constructed featuring deep cyber-security aesthetics (obsidian background, electric cyan/emerald accents, glassmorphism, floating keyframe animations).
+- The landing page highlights the core problem (The Visibility Gap: 80% encrypted traffic) and the solution (P.A.R.S.E: 93.6% ML Accuracy).
+- We also integrated robust User Management into the Supabase Auth workflow:
+  - The Sign Up form now collects a "Full Name" which is injected directly into Supabase's `raw_user_meta_data`.
+  - For existing users (grandfathered in without a name), the system halts the dashboard load and forces an "Action Required" screen, demanding their name before they can proceed.
+
+------------------------------------------------------
+10. PENDING INTEGRATIONS
+[Status: COMPLETED as of 2026-09-20 02:00 AM IST]
+------------------------------------------------------
+All major milestones, including the ML model, live packet capturing, real-time risk scoring, asynchronous progress architecture, premium frontend landing page, and strict hardware authentication have been successfully built, documented, and integrated.

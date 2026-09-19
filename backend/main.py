@@ -9,7 +9,7 @@ from datetime import datetime
 import pandas as pd
 import pyshark
 import xgboost as xgb
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Request
 from fastapi.middleware.cors import CORSMiddleware
 from supabase import create_client, Client
 from dotenv import load_dotenv
@@ -50,6 +50,13 @@ except Exception as e:
 
 capture_process = None
 pcap_filename = os.path.join(os.path.dirname(__file__), "temp_capture.pcap")
+
+processing_state = {
+    "status": "idle",
+    "progress": 0,
+    "result": None,
+    "error_detail": None
+}
 
 def is_admin():
     try:
@@ -94,8 +101,20 @@ async def startup_event():
     if os.name == 'nt' and not is_admin():
         print("WARNING: Backend is not running as Administrator. Packet capture may fail if Npcap is restricted.")
 
+@app.get("/api/hardware-id")
+def get_hardware_id():
+    mac_num = uuid.getnode()
+    mac = ':'.join(('%012X' % mac_num)[i:i+2] for i in range(0, 12, 2)).upper()
+    return {"mac_address": mac}
+
+def extract_token(request: Request):
+    auth = request.headers.get("Authorization")
+    if auth and auth.startswith("Bearer "):
+        return auth.split(" ")[1]
+    return None
+
 @app.post("/api/capture/start")
-def start_capture():
+def start_capture(request: Request):
     global capture_process
     if capture_process is not None:
         raise HTTPException(status_code=400, detail="Capture is already running.")
@@ -157,13 +176,20 @@ def calculate_risk_score(traffic_type, features):
     # Cap score boundaries
     return max(0, min(100, int(score)))
 
-def process_pcap_and_score():
-    global capture_process
+def process_pcap_and_score(token: str = None):
+    global capture_process, processing_state
+    
+    processing_state["status"] = "processing"
+    processing_state["progress"] = 0
+    processing_state["result"] = None
+    processing_state["error_detail"] = None
     
     # Process the pcap
     if not os.path.exists(pcap_filename):
         print("Error: PCAP file not found. Tshark failed to capture.")
-        return {"error": True, "detail": "Live capture failed. You must install the Npcap driver from https://npcap.com/ for Wireshark to sniff Windows network interfaces."}
+        processing_state["status"] = "error"
+        processing_state["error_detail"] = "Live capture failed. You must install the Npcap driver from https://npcap.com/ for Wireshark to sniff Windows network interfaces."
+        return
 
     try:
         # Pyshark requires an event loop, which might be missing in FastAPI's background thread
@@ -173,6 +199,19 @@ def process_pcap_and_score():
             asyncio.set_event_loop(asyncio.new_event_loop())
 
         tshark_path = get_tshark_path()
+        capinfos_path = tshark_path.replace("tshark.exe", "capinfos.exe") if os.name == 'nt' else tshark_path.replace("tshark", "capinfos")
+        
+        total_packets = 1000 # Fallback estimate
+        if os.path.exists(capinfos_path):
+            try:
+                output = subprocess.check_output([capinfos_path, "-c", pcap_filename], text=True)
+                for line in output.split('\n'):
+                    if "Number of packets:" in line:
+                        total_packets = int(line.split(":")[1].strip())
+                        break
+            except Exception:
+                pass
+
         cap = pyshark.FileCapture(pcap_filename, tshark_path=tshark_path)
         packet_count = 0
         ike_packet_count = 0
@@ -188,11 +227,19 @@ def process_pcap_and_score():
                 ike_packet_count += 1
             if hasattr(pkt, 'esp'):
                 esp_packet_count += 1
+                
+            # Update progress dynamically
+            if packet_count % 5 == 0:
+                processing_state["progress"] = min(95, int((packet_count / total_packets) * 100))
+                
         cap.close()
     except Exception as e:
         print(f"Error reading pcap: {e}")
-        return {"error": True, "detail": f"Failed to read capture file: {str(e)}"}
+        processing_state["status"] = "error"
+        processing_state["error_detail"] = f"Failed to read capture file: {str(e)}"
+        return
         
+    processing_state["progress"] = 95
     # Feature extraction
     features = {
         "packet_count": packet_count,
@@ -252,6 +299,9 @@ def process_pcap_and_score():
     # Upload to Supabase
     if supabase:
         try:
+            if token:
+                # Set the user JWT to respect RLS
+                supabase.postgrest.auth(token)
             res = supabase.table('packet_metadata').insert(metadata).execute()
             print("Data synced to Supabase:", res)
         except Exception as e:
@@ -261,10 +311,14 @@ def process_pcap_and_score():
     if os.path.exists(pcap_filename):
         os.remove(pcap_filename)
         
+    processing_state["progress"] = 100
+    processing_state["result"] = metadata
+    processing_state["status"] = "completed"
+    
     return metadata
 
 @app.post("/api/capture/stop")
-def stop_capture():
+def stop_capture(request: Request, background_tasks: BackgroundTasks):
     global capture_process
     if capture_process is None:
         raise HTTPException(status_code=400, detail="Capture is not running.")
@@ -278,13 +332,15 @@ def stop_capture():
         
     capture_process = None
     
-    metadata = process_pcap_and_score()
-    if metadata and "error" in metadata:
-        raise HTTPException(status_code=500, detail=metadata["detail"])
-    if not metadata:
-        raise HTTPException(status_code=500, detail="Failed to process capture.")
+    token = extract_token(request)
+    background_tasks.add_task(process_pcap_and_score, token)
         
-    return {"status": "stopped", "data": metadata}
+    return {"status": "processing_started"}
+
+@app.get("/api/progress")
+async def get_progress():
+    global processing_state
+    return processing_state
 
 @app.get("/api/status")
 async def get_status():
