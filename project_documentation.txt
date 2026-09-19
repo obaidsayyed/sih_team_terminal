@@ -220,7 +220,33 @@ CHANGES IMPLEMENTED:
    - Added a `captureCooldown` timer (3 seconds) that locks the "Start Capture" button after an analysis finishes, completely eliminating accidental double-clicks.
 
 ------------------------------------------------------
-11. PENDING INTEGRATIONS
-[Status: COMPLETED as of 2026-09-20 02:25 AM IST]
+11. PHASE 10: CLOUD DEPLOYMENT & THE LOCAL AGENT ARCHITECTURE
+[Completed: 2026-09-20 02:45 AM IST]
 ------------------------------------------------------
-All major milestones, including the ML model, live packet capturing, real-time risk scoring, asynchronous progress architecture, premium frontend landing page, strict hardware authentication, and comprehensive rate limiting have been successfully built, documented, and integrated.
+As the system moved towards a production-ready SaaS deployment (Frontend on Vercel, Backend on Render), a critical architectural limitation of web browsers needed to be addressed regarding live packet sniffing.
+
+THE PROBLEM:
+Modern web browsers enforce strict security sandboxes, completely prohibiting web applications (JavaScript) from accessing local network interfaces (NICs) or executing raw sockets. If the application is deployed to the cloud, clicking "Start Capture" on the web UI would only sniff the cloud server's traffic, not the user's local traffic.
+
+OPTIONS EVALUATED:
+1. Desktop App Conversion (Electron): Rewriting the entire React app into a heavy Electron desktop application. (Rejected: Requires full rewrite and heavy downloads).
+2. PCAP Upload Model: Removing live capturing and forcing users to manually record traffic using Wireshark and upload the `.pcap` files. (Rejected: Ruins the automated, live experience).
+3. Cloud-Managed Local Agent: Deploying the web app to the cloud, but utilizing a tiny, downloadable local script (Agent) to handle the physical sniffing.
+
+ROUTE TAKEN:
+Option 3 (Cloud-Managed Local Agent architecture) was selected. This is the industry standard for cybersecurity monitoring (used by CrowdStrike, Datadog). 
+
+THE APPROACH & LOGIC:
+- Vercel Frontend: The user visits the public web dashboard.
+- Render Backend: Handles the Supabase database, User Authentication, and XGBoost Machine Learning calculations.
+- The Local Agent: The user downloads a lightweight, headless Python script (the Agent). It runs quietly in the background of their local machine.
+- Execution Flow: When the user clicks "Start Capture" on Vercel, the web application sends a command to Render. Render tunnels that command down to the Local Agent via WebSockets. The Local Agent triggers `tshark` on the user's Wi-Fi card, records the packets, and streams the `.pcap` file back up to Render for ML scoring. 
+
+CONCLUSION:
+This architecture successfully bypasses the browser sandbox, completely hides `localhost` from the user (allowing them to use the premium Vercel domain), and successfully achieves real-time, remote-triggered local packet sniffing.
+
+------------------------------------------------------
+12. PENDING INTEGRATIONS
+[Status: COMPLETED as of 2026-09-20 02:45 AM IST]
+------------------------------------------------------
+All major milestones, including the ML model, live packet capturing, real-time risk scoring, asynchronous progress architecture, premium frontend landing page, strict hardware authentication, comprehensive rate limiting, and the Local Agent Cloud Architecture blueprint have been successfully built, documented, and integrated.
