@@ -1,0 +1,66 @@
+/* src/styles/tokens.css */
+
+:root {
+  /* Colors */
+  --canvas: #f6f3ee;
+  --canvas-2: #efeae2;
+  --surface: #fffdf9;
+  --surface-sunken: #f0ebe3;
+
+  --ink: #1d1d1f;
+  --ink-2: #6b665f;
+  --ink-3: #8f8a82;
+
+  --graphite: #1d1c1a;
+  --graphite-2: #2a2825;
+  --text-on-dark: #f5f2ec;
+  --text-on-dark-2: #a8a39a;
+
+  --cobalt: #0a5cff;
+  --cobalt-hover: #2a72ff;
+  --cobalt-press: #0849cc;
+  --cobalt-tint: rgba(10, 92, 255, 0.1);
+
+  --coral: #ff6b4a;
+  --amber: #ffb340;
+
+  --success: #30b455;
+  --success-text: #1a7a35;
+  --success-tint: rgba(48, 180, 85, 0.12);
+
+  --warning: #ff9f0a;
+  --warning-text: #9a5700;
+  --warning-tint: rgba(255, 159, 10, 0.12);
+
+  --danger: #ff3b30;
+  --danger-text: #c4251b;
+  --danger-tint: rgba(255, 59, 48, 0.12);
+
+  /* Gradients */
+  --signature-grad: linear-gradient(135deg, var(--cobalt) 0%, var(--coral) 50%, var(--amber) 100%);
+  --signature-conic: conic-gradient(from 180deg at 50% 50%, var(--cobalt) 0deg, var(--coral) 180deg, var(--amber) 360deg);
+
+  /* Radii */
+  --r-sm: 12px;
+  --r-md: 18px;
+  --r-lg: 24px;
+  --r-xl: 32px;
+  --r-2xl: 40px;
+  --r-pill: 9999px;
+
+  /* Shadows (Layered & physical) */
+  --shadow-1: 0 1px 1px rgba(29, 29, 31, 0.04);
+  --shadow-2: 0 8px 24px rgba(29, 29, 31, 0.07);
+  --shadow-3: 0 28px 60px rgba(29, 29, 31, 0.1);
+
+  /* Easings */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-inout: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@property --score {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 0;
+}
