@@ -36,10 +36,11 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Initialize Supabase
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
-SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
-supabase = None
-if SUPABASE_URL and SUPABASE_KEY:
-    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+SUPABASE_ANON_KEY = os.environ.get("SUPABASE_ANON_KEY")
+SUPABASE_SECRET_KEY = os.environ.get("SUPABASE_SECRET_KEY")
+
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY) if SUPABASE_URL and SUPABASE_ANON_KEY else None
+supabase_admin: Client = create_client(SUPABASE_URL, SUPABASE_SECRET_KEY) if SUPABASE_URL and SUPABASE_SECRET_KEY else None
 
 # Initialize ML Model
 model = None
@@ -311,7 +312,11 @@ def process_pcap_and_score(token: str = None):
             if token:
                 # Set the user JWT to respect RLS
                 supabase.postgrest.auth(token)
-            res = supabase.table('packet_metadata').insert(metadata).execute()
+            # Push to Supabase using the admin client (Secret Key) to bypass RLS
+            if supabase_admin:
+                res = supabase_admin.table('packet_metadata').insert(metadata).execute()
+            else:
+                res = supabase.table('packet_metadata').insert(metadata).execute()
             print("Data synced to Supabase:", res)
         except Exception as e:
             print(f"Failed to push to Supabase: {e}")
