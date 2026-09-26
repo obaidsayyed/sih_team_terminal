@@ -1,0 +1,22 @@
+:root {
+  --bg: #ffffff;
+  --bg-elev-1: #f5f5f7;
+  --bg-elev-2: #e5e5ea;
+  --bg-elev-3: #d1d1d6;
+  --separator: rgba(60, 60, 67, 0.36);
+  --label: #000000;
+  --label-2: rgba(60, 60, 67, 0.6);
+  --label-3: rgba(60, 60, 67, 0.3);
+  --blue: #007aff;
+  --green: #34c759;
+  --orange: #ff9500;
+  --red: #ff3b30;
+
+  --blue-tint: rgba(0, 122, 255, 0.1);
+  --green-tint: rgba(52, 199, 89, 0.1);
+  --orange-tint: rgba(255, 149, 0, 0.1);
+  --red-tint: rgba(255, 59, 48, 0.1);
+  
+  --mx: 50vw;
+  --my: 50vh;
+}
