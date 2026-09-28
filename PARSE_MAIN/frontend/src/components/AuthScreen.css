@@ -1,0 +1,343 @@
+/* =========================================================================
+   P.A.R.S.E AUTH SCREEN — DIRECTION: APPLIED CRYPTOGRAPHY
+   ========================================================================= */
+
+.screen-wrapper.auth-root {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100dvh;
+  width: 100vw;
+  background: transparent;
+  position: relative;
+  overflow: hidden;
+}
+
+.vault-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(100vw, 800px);
+  height: min(100dvh, 800px);
+  z-index: 0;
+}
+
+/* Base form wrapper inside the 3D Html component */
+.auth-sheet {
+  width: 330px;
+  max-width: 90vw;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: 1;
+  transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+  
+  /* Integrated Vault Recess Style */
+  background: rgba(32, 34, 38, 0.95);
+  border-radius: 12px;
+  box-shadow: inset 0 10px 30px rgba(0,0,0,0.9), inset 0 2px 4px rgba(0,0,0,0.6), 0 1px 2px rgba(255,255,255,0.03);
+  border: 1px solid rgba(0,0,0,0.9);
+  padding: 24px;
+}
+
+/* Modes just share the same recessed body now to remain consistent with physical door */
+.auth-sheet.mode-login {
+  /* Let framer motion handle scale */
+}
+
+/* Sign Up Mode */
+.auth-sheet.mode-signup {
+  /* Let framer motion handle scale */
+}
+
+.crypto-panel {
+  background: rgba(32, 34, 38, 0.9);
+  border-radius: 2px;
+  padding: 24px;
+  box-shadow: inset 0 8px 24px rgba(0,0,0,0.8), inset 0 1px 3px rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(0,0,0,0.9);
+}
+
+.auth-header {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.auth-title {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  margin: 0 0 8px 0;
+  color: var(--label);
+  text-transform: uppercase;
+}
+
+.auth-subtitle {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--accent);
+  margin: 0 0 12px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  opacity: 0.8;
+}
+
+/* Technical Tabs */
+.auth-tabs {
+  display: flex;
+  background: rgba(14, 17, 22, 0.8);
+  border-radius: 2px;
+  padding: 2px;
+  margin-bottom: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  position: relative;
+}
+
+.auth-tab {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--label-3);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 10px 0;
+  cursor: pointer;
+  transition: color 0.3s ease;
+  position: relative;
+  z-index: 1;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.auth-tab.active {
+  color: #0E1116;
+}
+
+.tab-indicator {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  border-radius: 4px 16px 4px 16px;
+  background: var(--accent);
+  z-index: 0;
+  transition: left 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Inner panel for fields */
+.fields-container {
+  background: transparent;
+  padding: 8px 0;
+  box-shadow: none;
+  border: none;
+  margin-top: 12px;
+  max-height: 50dvh;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.fields-container::-webkit-scrollbar {
+  display: none;
+}
+
+.auth-field-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+@media (max-width: 600px) {
+  .auth-field-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.auth-field-col {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Recessed Input Fields */
+.inset-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.field-label {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(68, 201, 216, 0.6);
+  margin-bottom: 6px;
+  display: block;
+}
+
+.inset-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: rgba(10, 12, 16, 0.85); /* Terminal slot dark background */
+  border: none;
+  border-radius: 4px; /* Harder edges like hardware slots */
+  padding: 0 10px;
+  height: 42px; /* Compact height for 6 fields */
+  box-shadow: inset 0 4px 12px rgba(0,0,0,0.9), inset 0 1px 2px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.03); /* Deep inset shadow */
+  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.inset-row:focus-within {
+  background: rgba(12, 14, 18, 0.95);
+  box-shadow: inset 0 4px 12px rgba(0,0,0,0.8), 0 0 0 1px var(--accent);
+}
+
+.row-icon {
+  color: var(--label-3);
+  margin-right: 12px;
+  flex-shrink: 0;
+  transition: color 0.3s ease;
+  stroke-width: 1.5;
+}
+
+.inset-row:focus-within .row-icon {
+  color: var(--accent);
+}
+
+.inset-row input {
+  flex: 1;
+  min-width: 0; /* CRITICAL: prevents flex grid overflow */
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--label);
+  font-size: 12px;
+  outline: none;
+  height: 100%;
+  caret-color: var(--accent);
+  text-shadow: none;
+}
+
+.inset-row input:-webkit-autofill,
+.inset-row input:-webkit-autofill:hover, 
+.inset-row input:-webkit-autofill:focus, 
+.inset-row input:-webkit-autofill:active {
+  transition: background-color 5000s ease-in-out 0s;
+  -webkit-text-fill-color: #EBEADF !important;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.inset-row input::placeholder {
+  color: rgba(235, 234, 223, 0.3);
+}
+
+.inset-row input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.eye-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--label-3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin-left: 8px;
+  transition: color 0.2s ease;
+}
+
+.eye-btn:hover {
+  color: var(--accent-light);
+}
+
+/* Cryptographic Action Button */
+.auth-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.btn-primary {
+  position: relative;
+  height: 48px;
+  border-radius: 8px; /* Match harder terminal aesthetic */
+  background: var(--accent);
+  border: none;
+  color: #0E1116;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 15px rgba(68, 201, 216, 0.2);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s, background 0.3s;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--accent-light);
+  box-shadow: 0 10px 24px rgba(68, 201, 216, 0.4);
+  transform: translateY(-2px) scale(1.03);
+}
+
+.btn-primary:active:not(:disabled) {
+  background: var(--accent);
+  transform: scale(0.99);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  border-color: rgba(255, 255, 255, 0.1);
+  color: rgba(235, 234, 223, 0.4);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  box-shadow: none;
+}
+
+.drain-fill {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background: var(--accent);
+  animation: drain 5s linear forwards;
+}
+
+@keyframes drain {
+  from { width: 100%; }
+  to { width: 0%; }
+}
+
+.btn-danger-plain {
+  background: transparent;
+  border: none;
+  color: rgba(218, 54, 51, 0.8);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  padding: 8px;
+  transition: opacity 0.2s ease;
+}
+
+.btn-danger-plain:hover {
+  opacity: 1;
+  color: #DA3633;
+}
+
+.auth-error {
+  min-height: 24px;
+  padding-left: 12px;
+  color: #DA3633;
+}

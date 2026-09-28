@@ -1,0 +1,30 @@
+:root {
+  --bg: #111418; /* Cool dark slate */
+  --bg-elev-1: #1A1D24;
+  --bg-elev-2: #242831;
+  --bg-elev-3: #2F3440;
+  --bg-light: #F5F4E8;
+  --separator: rgba(255, 255, 255, 0.08);
+  
+  --label: #F0EDE6; /* Soft ivory */
+  --label-2: rgba(240, 237, 230, 0.7);
+  --label-3: rgba(240, 237, 230, 0.4);
+  
+  /* Primary Accent: Warm Copper/Terracotta */
+  --accent: #E07A5F;
+  --accent-tint: rgba(224, 122, 95, 0.15);
+  --accent-light: #F2957E;
+
+  --blue: #E07A5F; /* Remapping blue to accent for landing page compatibility */
+  --green: #238636;
+  --orange: #D29922;
+  --red: #DA3633;
+
+  --blue-tint: rgba(224, 122, 95, 0.1);
+  --green-tint: rgba(35, 134, 54, 0.1);
+  --orange-tint: rgba(210, 153, 34, 0.1);
+  --red-tint: rgba(218, 54, 51, 0.1);
+  
+  --mx: 50vw;
+  --my: 50vh;
+}
