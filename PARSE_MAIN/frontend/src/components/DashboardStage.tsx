@@ -63,7 +63,7 @@ export default function DashboardStage({
 }: DashboardStageProps) {
   const isStartDisabled = isRunning || loading || captureCooldown > 0;
   const isStopDisabled = !isRunning || loading;
-  
+
   const [aiReport, setAiReport] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [aiReportError, setAiReportError] = useState('');
@@ -83,7 +83,7 @@ export default function DashboardStage({
       if (!apiKey) {
         throw new Error("Gemini API key is not configured in .env");
       }
-      
+
       const prompt = `Analyze the following network packet metadata and provide a brief, professional cybersecurity risk assessment (max 3 short paragraphs).
       
       Traffic Type: ${currentResult.traffic_type}
@@ -96,18 +96,18 @@ export default function DashboardStage({
       Risk Score: ${currentResult.risk_score}/100
       
       Focus on whether this traffic appears anomalous, secure, or malicious.`;
-      
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }]
         })
       });
-      
+
       const data = await response.json();
       if (!response.ok) throw new Error(data.error?.message || 'Failed to generate report');
-      
+
       setAiReport(data.candidates[0].content.parts[0].text);
     } catch (err: any) {
       setAiReportError(err.message);
@@ -160,7 +160,7 @@ export default function DashboardStage({
       const riskClass = getRiskClass(currentResult.risk_score);
       const riskLabel = currentResult.risk_score >= 70 ? 'High' : (currentResult.risk_score >= 40 ? 'Elevated' : 'Low');
       const isWarnType = ['icmp', 'voip'].includes(currentResult.traffic_type.toLowerCase());
-      
+
       return (
         <motion.div
           key="result"
@@ -171,16 +171,16 @@ export default function DashboardStage({
           style={{ justifyContent: 'flex-start' }}
         >
           <div className="stage-title">Latest Analysis Report</div>
-          
+
           <div className="result-score-container">
-            <div className={`result-score ${riskClass}`} style={{ 
+            <div className={`result-score ${riskClass}`} style={{
               color: currentResult.risk_score >= 70 ? 'var(--red)' : currentResult.risk_score >= 40 ? 'var(--orange)' : 'var(--green)'
             }}>
               <RollingNumber value={currentResult.risk_score} />
             </div>
-            
+
             <div className="range-bar">
-              <motion.div 
+              <motion.div
                 className="range-marker"
                 initial={{ left: 0 }}
                 animate={{ left: `calc(${currentResult.risk_score}% - 10px)` }}
@@ -192,7 +192,7 @@ export default function DashboardStage({
             </div>
           </div>
 
-          <motion.div 
+          <motion.div
             className="metric-group"
             initial="hidden"
             animate="visible"
@@ -237,13 +237,13 @@ export default function DashboardStage({
                   <Bot size={16} /> Gemini AI Analysis
                 </div>
                 {!aiReport && (
-                  <button 
-                    onClick={generateAIReport} 
+                  <button
+                    onClick={generateAIReport}
                     disabled={isGenerating}
-                    style={{ 
-                      background: isGenerating ? 'var(--bg-elev-3)' : 'var(--accent)', 
-                      color: isGenerating ? 'var(--label-3)' : '#111', 
-                      padding: '6px 12px', borderRadius: 12, 
+                    style={{
+                      background: isGenerating ? 'var(--bg-elev-3)' : 'var(--accent)',
+                      color: isGenerating ? 'var(--label-3)' : '#111',
+                      padding: '6px 12px', borderRadius: 12,
                       fontWeight: 600, fontSize: 12, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6
                     }}
                   >
@@ -258,17 +258,17 @@ export default function DashboardStage({
                   </button>
                 )}
               </div>
-              
+
               {aiReportError && (
                 <div style={{ color: 'var(--red)', fontSize: 12, background: 'rgba(218, 54, 51, 0.1)', padding: 10, borderRadius: 8, width: '100%', textAlign: 'left' }}>
                   {aiReportError}
                 </div>
               )}
-              
+
               {aiReport && (
-                <motion.div 
-                  initial={{ opacity: 0, height: 0 }} 
-                  animate={{ opacity: 1, height: 'auto' }} 
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
                   style={{ color: 'var(--label)', fontSize: 13, lineHeight: 1.5, whiteSpace: 'pre-wrap', textAlign: 'left', width: '100%', background: 'var(--bg-elev-1)', padding: 12, borderRadius: 8 }}
                 >
                   {aiReport}
@@ -297,12 +297,12 @@ export default function DashboardStage({
 
   const controls = (
     <>
-      <button 
-        className="btn-primary" 
-        onClick={startCapture} 
+      <button
+        className="btn-primary"
+        onClick={startCapture}
         disabled={isStartDisabled}
-        style={{ 
-          flex: 1, height: 48, borderRadius: 24, 
+        style={{
+          flex: 1, height: 48, borderRadius: 24,
           background: isStartDisabled ? 'var(--bg-elev-3)' : 'linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%)',
           color: isStartDisabled ? 'var(--label-3)' : '#fff',
           fontSize: '16px', fontWeight: 600, letterSpacing: '0.05em', border: 'none',
@@ -317,12 +317,12 @@ export default function DashboardStage({
           "START CAPTURE"
         )}
       </button>
-      <button 
-        className="btn-primary" 
-        onClick={stopCapture} 
+      <button
+        className="btn-primary"
+        onClick={stopCapture}
         disabled={isStopDisabled}
-        style={{ 
-          flex: 1, height: 48, borderRadius: 24, 
+        style={{
+          flex: 1, height: 48, borderRadius: 24,
           background: isStopDisabled ? 'var(--bg-elev-3)' : 'var(--red)',
           color: isStopDisabled ? 'var(--label-3)' : '#fff',
           fontSize: '16px', fontWeight: 600, letterSpacing: '0.05em', border: 'none',

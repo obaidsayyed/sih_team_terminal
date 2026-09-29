@@ -65,6 +65,13 @@ function Dashboard() {
     localStorage.setItem('parse_history', JSON.stringify(history));
   }, [history]);
   const [error, setError] = useState<string | null>(null);
+  const [agentPopup, setAgentPopup] = useState(false);
+
+  // Onboarding State
+  const [hasSeenOnboarding, setHasSeenOnboarding] = useState(() => {
+    return localStorage.getItem('parse_onboarding_done') === 'true';
+  });
+  const [onboardingStep, setOnboardingStep] = useState(1);
 
   // Progress & Throttling State
   const [isProcessing, setIsProcessing] = useState(false);
@@ -250,7 +257,11 @@ function Dashboard() {
       setIsRunning(true);
       setCurrentResult(null);
     } catch (err: any) {
-      setError(err.response?.data?.detail || "Failed to start capture.");
+      if (err.response?.status === 400 && err.response?.data?.detail?.includes("Local Agent connected")) {
+        setAgentPopup(true);
+      } else {
+        setError(err.response?.data?.detail || "Failed to start capture.");
+      }
     } finally {
       setLoading(false);
     }
@@ -318,6 +329,49 @@ function Dashboard() {
         <div className="auth-layout">
           <div className="status-icon-circle loading">
             <Activity size={32} />
+          </div>
+        </div>
+      </Wallpaper>
+    );
+  }
+
+  // --- PRE-AUTH ONBOARDING ---
+  if (!user && !hasSeenOnboarding) {
+    return (
+      <Wallpaper riskState="idle">
+        <div className="auth-layout">
+          <div className="onboarding-card">
+            {onboardingStep === 1 ? (
+              <>
+                <h3 className="onboarding-title">Wireshark Required</h3>
+                <p className="onboarding-desc">You must install Wireshark before you run this application.</p>
+                <div className="onboarding-actions">
+                  <a href="https://www.wireshark.org/download.html" target="_blank" rel="noreferrer" className="btn-download">
+                    Download Wireshark
+                  </a>
+                  <button className="btn-next" onClick={() => setOnboardingStep(2)}>
+                    Next
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h3 className="onboarding-title">Download Local Agent</h3>
+                <p className="onboarding-desc">Now, download the Local Agent and run it.</p>
+                <p className="onboarding-hint">After downloading, run this agent by clicking twice and give it permissions to make changes to your device (Administrator permissions).</p>
+                <div className="onboarding-actions">
+                  <a href={`${API_BASE}/agent/download`} className="btn-download" download>
+                    Download Agent
+                  </a>
+                  <button className="btn-next" onClick={() => {
+                    localStorage.setItem('parse_onboarding_done', 'true');
+                    setHasSeenOnboarding(true);
+                  }}>
+                    Continue to App
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </Wallpaper>
@@ -424,6 +478,24 @@ function Dashboard() {
         )}
 
         <div className="dashboard-main">
+          {agentPopup && (
+            <div className="agent-popup-overlay">
+              <div className="agent-popup">
+                <h3>Agent Not Connected</h3>
+                <p>Agent is not connected. Please connect to the local agent.</p>
+                <p className="agent-popup-hint">After downloading, run this agent by clicking twice and give it permissions to make changes to your device (Administrator permissions).</p>
+                <div className="agent-popup-actions">
+                  <a href={`${API_BASE}/agent/download`} className="btn-download" download>
+                    Download Agent
+                  </a>
+                  <button onClick={() => setAgentPopup(false)} className="btn-close">
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           <DashboardStage
             isRunning={isRunning}
             isProcessing={isProcessing}

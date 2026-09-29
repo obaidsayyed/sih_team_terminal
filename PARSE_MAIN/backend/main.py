@@ -9,7 +9,8 @@ from datetime import datetime
 import pandas as pd
 import xgboost as xgb
 import uvicorn
-from fastapi import FastAPI, HTTPException, BackgroundTasks, Request
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Request, WebSocket, WebSocketDisconnect, UploadFile, File
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from supabase import create_client, Client
 from dotenv import load_dotenv
@@ -78,7 +79,9 @@ try:
 except Exception as e:
     print(f"Warning: Could not load XGBoost models. Using dummy predictions. Error: {e}")
 
-capture_process = None
+active_agent_ws = None
+current_token = None
+capture_is_running = False
 pcap_filename = os.path.join(os.path.dirname(__file__), "temp_capture.pcap")
 
 processing_state = {
@@ -102,29 +105,19 @@ def get_tshark_path():
         return r"C:\Program Files\Wireshark\tshark.exe"
     raise Exception("tshark executable not found. Please ensure Wireshark is installed.")
 
-def get_active_interface():
+@app.websocket("/api/agent/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    global active_agent_ws
+    await websocket.accept()
+    active_agent_ws = websocket
+    print("[+] Local Agent connected via WebSocket")
     try:
-        tshark_path = get_tshark_path()
-        output = subprocess.check_output([tshark_path, "-D"], text=True)
-        ethernet_match = None
-        for line in output.split('\n'):
-            line = line.strip()
-            if not line: continue
-            parts = line.split('.', 1)
-            if len(parts) == 2:
-                idx = parts[0].strip()
-                desc = parts[1].lower()
-                # Prioritize Wi-Fi adapter
-                if 'wifi' in desc or 'wi-fi' in desc:
-                    return idx
-                # Fallback to Ethernet
-                if 'ethernet' in desc and not ethernet_match:
-                    ethernet_match = idx
-        if ethernet_match:
-            return ethernet_match
-    except Exception as e:
-        print(f"Failed to detect active interface: {e}")
-    return None
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        print("[-] Local Agent disconnected")
+        if active_agent_ws == websocket:
+            active_agent_ws = None
 
 @app.on_event("startup")
 async def startup_event():
@@ -139,31 +132,22 @@ def extract_token(request: Request):
 
 @app.post("/api/capture/start")
 @limiter.limit("5/minute")
-def start_capture(request: Request):
-    global capture_process
-    if capture_process is not None:
-        raise HTTPException(status_code=400, detail="Capture is already running.")
+async def start_capture(request: Request):
+    global active_agent_ws, capture_is_running
+    if not active_agent_ws:
+        raise HTTPException(status_code=400, detail="No active Local Agent connected. Please launch agent.py locally.")
     
-    # Remove old pcap if exists
-    if os.path.exists(pcap_filename):
-        os.remove(pcap_filename)
-        
+    processing_state["status"] = "idle"
+    processing_state["progress"] = 0
+    processing_state["error_detail"] = None
+    capture_is_running = True
+    
     try:
-        # Start tshark
-        tshark_path = get_tshark_path()
-        interface = get_active_interface()
-        
-        if interface:
-            print(f"Starting capture on interface: {interface}")
-            cmd = [tshark_path, "-i", interface, "-w", pcap_filename, "-q"]
-        else:
-            print("Starting capture on default interface")
-            cmd = [tshark_path, "-w", pcap_filename, "-q"]
-            
-        capture_process = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        return {"status": "started", "message": "Packet capture started."}
+        await active_agent_ws.send_json({"command": "start"})
+        return {"status": "started", "message": "Command sent to Local Agent."}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to start tshark: {e}")
+        capture_is_running = False
+        raise HTTPException(status_code=500, detail=f"Agent communication failed: {e}")
 
 def calculate_risk_score(traffic_type, features):
     score = 0
@@ -377,24 +361,30 @@ def process_pcap_and_score(token: str = None):
 
 @app.post("/api/capture/stop")
 @limiter.limit("5/minute")
-def stop_capture(request: Request, background_tasks: BackgroundTasks):
-    global capture_process
-    if capture_process is None:
-        raise HTTPException(status_code=400, detail="Capture is not running.")
+async def stop_capture(request: Request):
+    global active_agent_ws, current_token, capture_is_running
+    if not active_agent_ws:
+        capture_is_running = False
+        raise HTTPException(status_code=400, detail="No active Local Agent connected.")
         
-    # Terminate tshark
-    capture_process.terminate()
-    try:
-        capture_process.wait(timeout=5)
-    except subprocess.TimeoutExpired:
-        capture_process.kill()
-        
-    capture_process = None
+    processing_state["status"] = "uploading"
+    current_token = extract_token(request)
+    capture_is_running = False
     
-    token = extract_token(request)
-    background_tasks.add_task(process_pcap_and_score, token)
+    try:
+        await active_agent_ws.send_json({"command": "stop"})
+        return {"status": "processing_started"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Agent communication failed: {e}")
+
+@app.post("/api/capture/upload")
+async def upload_capture(background_tasks: BackgroundTasks, file: UploadFile = File(...)):
+    global current_token
+    with open(pcap_filename, "wb") as f:
+        f.write(await file.read())
         
-    return {"status": "processing_started"}
+    background_tasks.add_task(process_pcap_and_score, current_token)
+    return {"status": "success"}
 
 @app.get("/api/progress")
 @limiter.limit("5/second")
@@ -402,9 +392,15 @@ def get_progress(request: Request):
     global processing_state
     return processing_state
 
+@app.get("/api/agent/download")
+def download_agent():
+    agent_path = os.path.join(os.path.dirname(__file__), "dist", "ParseAgent.exe")
+    if os.path.exists(agent_path):
+        return FileResponse(agent_path, filename="ParseAgent.exe")
+    raise HTTPException(status_code=404, detail="Agent executable not found. Please compile it first.")
+
 @app.get("/api/status")
 @limiter.limit("10/minute")
 def get_status(request: Request):
-    global capture_process
-    is_running = capture_process is not None
-    return {"is_running": is_running}
+    global capture_is_running
+    return {"is_running": capture_is_running}

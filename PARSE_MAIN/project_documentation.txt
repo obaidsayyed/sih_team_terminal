@@ -555,3 +555,39 @@ CHANGES IMPLEMENTED:
 - Frontend Purge: Entirely deleted `HardwareVerification.tsx` and its associated CSS. Analysts will never again see the hardware request screen or need to email an admin for approval.
 - Single Session Token Logic: When a user successfully authenticates in `Dashboard.tsx`, the frontend generates a unique `session_token` (UUID), stores it in `localStorage`, and binds it seamlessly to the Supabase user's `user_metadata`.
 - Silent Cross-Device Enforcement: The dashboard runs a passive `verifySession()` check in the background. If user A is logged in and user B logs in with the exact same credentials on another device, user B generates a new `session_token` that overwrites the database metadata. The next time user A clicks, scrolls, or the background poller runs, user A's dashboard realizes its local token is stale and silently logs user A out, enforcing true single-active-session concurrency perfectly.
+
+------------------------------------------------------
+32. PHASE 30: CLOUD-MANAGED LOCAL AGENT REFACTOR
+[Completed: 2026-09-30 01:58 AM IST]
+------------------------------------------------------
+Concept: Implementing the "Cloud-Managed Local Agent" deployment strategy (as proposed in Phase 10). The backend was completely split to safely decouple the physical packet sniffing from the ML processing pipeline, allowing true cloud deployment.
+
+CHANGES IMPLEMENTED:
+- Local Agent Creation (`agent.py`): Built a standalone, headless Python script. It utilizes `websockets` to securely connect to the Cloud C2 Server and awaits commands. When commanded, it dynamically identifies the active Wi-Fi/Ethernet interface, spawns `tshark` in promiscuous mode locally, and uploads the `.pcap` to the cloud upon completion.
+- Cloud Backend Refactor (`main.py`): Stripped the local `tshark` capture capabilities from the FastAPI server. It now strictly serves as a C2 (Command & Control) server. It hosts a `/api/agent/ws` WebSocket endpoint to command the connected agent, and a `/api/capture/upload` endpoint to receive the resulting `.pcap` files for cloud-side XGBoost processing.
+- Status Normalization: The frontend continues to poll `get_status` seamlessly, unaware that the backend is simply brokering the capture commands down to the user's local machine via WebSocket tunneling.
+
+------------------------------------------------------
+33. PHASE 31: DEPLOYMENT ONBOARDING & UI POLISH
+[Completed: 2026-09-30 02:35 AM IST]
+------------------------------------------------------
+Concept: Ensuring a smooth user onboarding experience for the Cloud-Managed Local Agent architecture.
+
+CHANGES IMPLEMENTED:
+- Pre-Auth Onboarding Flow: Added a sequential onboarding screen for first-time visitors before they can authenticate. It instructs them to download Wireshark (for Npcap/tshark drivers) and then download the Local Agent script.
+- Agent Disconnect Fallback UI: Implemented a custom error popup in the dashboard. If the user clicks "Start Capture" while their local agent is disconnected, they receive a targeted popup allowing them to re-download the agent and reminding them to run it with Administrator permissions.
+- Agent Hosting: Added a /api/agent/download GET endpoint to the FastAPI backend, allowing the frontend to dynamically serve the gent.py script.
+- Dependency Management: Successfully generated equirements.txt for the backend and updated package-lock.json via npm for the frontend.
+- API Throttling & Rate Limiting: Verified that endpoints are strictly rate-limited using slowapi, and that frontend buttons correctly enforce a silent 3-5 second throttle (via uthCooldown and captureCooldown) to prevent UI spamming.
+
+------------------------------------------------------
+34. PHASE 32: AGENT COMPILATION & PRODUCTION BUILD
+[Completed: 2026-09-30 02:48 AM IST]
+------------------------------------------------------
+Concept: Transforming the Local Agent script into a zero-dependency executable for production distribution.
+
+CHANGES IMPLEMENTED:
+- PyInstaller Build: Compiled gent.py using PyInstaller into a standalone, single-file Windows Executable (ParseAgent.exe). 
+- Administrator Binding: Embedded the --uac-admin flag into the executable to inherently request Windows Administrator privileges upon launch, guaranteeing Npcap driver access without relying on the user to right-click and "Run as Admin".
+- Endpoint Redirection: Updated /api/agent/download in main.py to securely serve dist/ParseAgent.exe instead of the raw Python script, ensuring end-users do not need Python or Pip installed to use the P.A.R.S.E ecosystem.
+- Dependency Lock: Finalized equirements.txt with all PyInstaller dependencies required for the Python 3.13 venv.
