@@ -362,434 +362,196 @@ DEPENDENCIES ADDED:
 CONSTRAINTS ENFORCED:
 - Zero changes to /app, Dashboard.tsx, or any backend logic.
 - Responsive from 320px to 2560px without horizontal scroll.
-- Implemented prefers-reduced-motion fallbacks (cross-fade transitions, static canvas).
-
---------------------------------------------------------------------------------
-19. LANDING PAGE REDESIGN (V5, 3D)
+- Implemented prefers-reduced-motion fallbacks (cross-fade transitions, static canvas).------------------------------------------------------
+19. PHASE 17: LANDING PAGE REDESIGN (V5, 3D)
 [Completed: 2026-09-21 05:58 PM IST]
-
+------------------------------------------------------
 Concept: "One Sealed Capsule, One Continuous Camera". A real 3D WebGL scene sits behind the page featuring a central frosted-glass hero capsule. An instanced mesh field of smaller capsules provides a living background that interacts with the user's cursor. Scrolling moves a cinematic camera seamlessly between sections.
 
-Files Created:
-- c:\Users\LENOVO\OneDrive\Desktop\SIH\PARSE\frontend\src\landing\RouteTransitionWrapper.tsx
-- c:\Users\LENOVO\OneDrive\Desktop\SIH\PARSE\frontend\src\landing\Scene.tsx
-- c:\Users\LENOVO\OneDrive\Desktop\SIH\PARSE\frontend\src\landing\landing.css
+CHANGES IMPLEMENTED:
+- Created: `Scene.tsx`, `RouteTransitionWrapper.tsx`, `landing.css`.
+- Modified: `App.tsx`, `Landing.tsx`, `package.json`.
+- Deleted: Obsolete landing components (`HeroCanvas.tsx`, `VisibilityGap.tsx`, `FeaturePanels.tsx`).
+- Dependencies Added: `three` (v0.170.0), `@react-three/fiber` (v9.7.0), `@react-three/drei` (v10.0.0), `@types/three`.
 
-Files Modified:
-- c:\Users\LENOVO\OneDrive\Desktop\SIH\PARSE\frontend\src\App.tsx
-- c:\Users\LENOVO\OneDrive\Desktop\SIH\PARSE\frontend\src\Landing.tsx
-- c:\Users\LENOVO\OneDrive\Desktop\SIH\PARSE\frontend\package.json
-
-Files Deleted:
-- c:\Users\LENOVO\OneDrive\Desktop\SIH\PARSE\frontend\src\components\landing\RouteTransitionWrapper.tsx
-- c:\Users\LENOVO\OneDrive\Desktop\SIH\PARSE\frontend\src\components\landing\HeroCanvas.tsx
-- c:\Users\LENOVO\OneDrive\Desktop\SIH\PARSE\frontend\src\components\landing\VisibilityGap.tsx
-- c:\Users\LENOVO\OneDrive\Desktop\SIH\PARSE\frontend\src\components\landing\FeaturePanels.tsx
-
-Dependencies Added:
-- 	hree (v0.170.0): Core WebGL engine for rendering the 3D scene.
-- @react-three/fiber (v9.7.0): React renderer for three.js, allowing declarative 3D composition.
-- @react-three/drei (v10.0.0): Helpers for R3F (Environment, Lightformer, RoundedBox).
-- @types/three: Type definitions for three.js.
-
-Landing Sections Redesigned:
+LANDING SECTIONS REDESIGNED:
 - Hero: Asymmetric glass typography layout with a flashlight mask effect.
 - Visibility Gap: 3-beat scroll-driven sequence where the 3D field reacts and glass text panels reveal sequentially.
 - Features: 3 sticky glass stations that highlight as the user scrolls.
 - Progress Rail: A right-edge dot navigation bar for fast section jumping.
 
-3D Scene & Live Interaction:
+3D SCENE & LIVE INTERACTION:
 - Single HeroCapsule with MeshPhysicalMaterial transmission and clearcoat, rendering a frosted glass look.
 - Field of 320 InstancedMesh capsules that float idly and repel from the user's cursor using custom physics within useFrame.
 - Camera is driven dynamically via a single mapped scroll progress value, tracking from the hero to the visibility gap layout.
 
-Page-Transition Mechanism:
+PAGE-TRANSITION MECHANISM:
 - Uses a cinematic "Dive" where the camera pushes physically into the frosted hero capsule until it fills the viewport.
-- After 650ms, a crossfade executes the 
-avigate('/app') command.
+- After 650ms, a crossfade executes the navigate('/app') command.
 - Reduced Motion Fallback: Reverts to a 150ms instant crossfade without the 3D dive.
 
-WebGL Fallback Strategy:
+WEBGL FALLBACK STRATEGY:
 - The entire Scene.tsx is encapsulated within a React Suspense boundary.
 - A FallbackPoster HTML overlay renders immediately if the WebGL canvas fails to mount or initialize.
 
-Performance Measures & Bundle Size:
-- Scene.tsx is completely lazy-loaded (lazy(() => import('./landing/Scene'))), ensuring it only loads on /.
+PERFORMANCE MEASURES & BUNDLE SIZE:
+- Scene.tsx is completely lazy-loaded, ensuring it only loads on `/`.
 - Utilized an InstancedMesh for the 320 background capsules to guarantee 1 draw call.
-- The 3D chunk size was measured at just **20.40 kB (gzipped)**.
+- The 3D chunk size was measured at just 20.40 kB (gzipped).
 
-Responsive Strategy:
+RESPONSIVE STRATEGY:
 - CSS clamp functions for fluid typography.
 - Grid switches to 1-column stack below 1100px.
 - WebGL viewport bounds adjusted using isMobile checks inside R3F hooks to lower the base y offset of the hero capsule.
 
-Logic & Integrity Statement:
-- The ackend/ folder, /app screens, global theme tokens, and frontend core logic **were absolutely not changed**.
+LOGIC & INTEGRITY STATEMENT:
+- The `backend/` folder, `/app` screens, global theme tokens, and frontend core logic were absolutely not changed.
 - The Dashboard components remain identical.
-- Noticeable quirks in Dashboard.tsx (
-eact-hooks/exhaustive-deps warnings and component initialization sequencing) were deliberately left untouched per instructions.
 
---------------------------------------------------------------------------------
-20. LANDING PAGE REDESIGN (V6, APPLE-GRADE HTML)
+------------------------------------------------------
+20. PHASE 18: LANDING PAGE REDESIGN (V6, APPLE-GRADE HTML)
 [Completed: 2026-09-21 06:06 PM IST]
+------------------------------------------------------
+Concept: "Cinematic Scroll & Bento Grid". A complete rewrite of the HTML overlay to be "Apple-grade" (dynamic typography, scroll-telling, staggered entrances, asymmetric grid) while keeping the V5 3D WebGL scene and visual theme completely untouched.
 
-Concept: "Cinematic Scroll & Bento Grid".  a complete rewrite of the HTML overlay to be "Apple-grade" (dynamic typography, scroll-telling, staggered entrances, asymmetric grid) while keeping the V5 3D WebGL scene and visual theme completely untouched.
-
-Files Modified:
-- c:\Users\LENOVO\OneDrive\Desktop\SIH\PARSE\frontend\src\Landing.tsx
-- c:\Users\LENOVO\OneDrive\Desktop\SIH\PARSE\frontend\src\landing\landing.css
-
-Landing Sections Redesigned:
+LANDING SECTIONS REDESIGNED:
 - Nav: Replaced floating pill with a sleek, full-width glass header that dynamically fades and blurs using useTransform.
-- Hero: Removed static frosted box. Implemented massive, gradient-clipped typography with a buttery ramer-motion staggered entrance (spring physics).
+- Hero: Removed static frosted box. Implemented massive, gradient-clipped typography with a buttery framer-motion staggered entrance (spring physics).
 - Visibility Gap: Implemented "Cinematic Scroll-Telling". Background stats are rendered massively (e.g. 400px), while the description text fades and translates over them on scroll via useTransform.
 - Features: Replaced standard stacked list with an asymmetric 2x2 "Bento Grid". Cards use whileInView to cascade and float upwards as the user scrolls into the section. 
 
-Logic & Integrity Statement:
+LOGIC & INTEGRITY STATEMENT:
 - The Scene.tsx 3D background logic and animation were strictly preserved per user request.
-- The ackend/ folder, /app screens, and global theme tokens were strictly preserved.
+- The `backend/` folder, `/app` screens, and global theme tokens were strictly preserved.
 
---------------------------------------------------------------------------------
-21. LANDING PAGE REDESIGN (V7, THE ULTIMATE APPLE-GRADE MASTERPIECE)
+------------------------------------------------------
+21. PHASE 19: LANDING PAGE REDESIGN (V7, THE ULTIMATE APPLE-GRADE MASTERPIECE)
 [Completed: 2026-09-21 06:11 PM IST]
+------------------------------------------------------
+Concept: "Zero AI Slop. True Apple-Grade Integration." A complete scratch rebuild to eliminate layout issues such as font overriding and WebGL clipping. 
 
-Concept: "Zero AI Slop. True Apple-Grade Integration." a complete scratch rebuild to eliminate the previous "AI Slop" layout, complaining about the font overriding and the WebGL clipping. 
+ISSUES FIXED FROM V6:
+- Font Breaking: V6 landing.css had overridden font-family. V7 relies strictly on the global font settings, ensuring authentic typography scaling.
+- Z-Index Clipping: The V6 layout resulted in the InstancedMesh 3D capsules floating in front of the text. V7 forces `.landing-canvas-layer` to `z-index: -1`, perfectly tucking the interactive 3D field into the background.
+- Glass Transparency Loss: Custom rgba boxes lost their structure. V7 now universally employs the existing `.glass` utility class from `index.css`, bringing perfect Liquid Glass consistency.
 
-Issues fixed from V6:
-- **Font Breaking**: V6 landing.css had overridden ont-family causing the loss of SF Pro Text / Inter from index.css. V7 relies strictly on the global font settings, ensuring the authentic typography scales correctly.
-- **Z-Index Clipping**: The V6 layout resulted in the InstancedMesh 3D capsules floating *in front* of the text, making it unreadable. V7 forces .landing-canvas-layer to z-index: -1, perfectly tucking the interactive 3D field into the background.
-- **Glass Transparency Loss**: Custom 
-gba boxes lost their structure. V7 now universally employs the existing .glass utility class from index.css, bringing perfect Liquid Glass consistency to the landing page identical to the dashboard.
+REDESIGNED LAYOUT:
+- Hero: Clean, perfectly spaced left-aligned text with simple, high-contrast CTA buttons. No gimmicky gradients that break readability. Staggered framer-motion entrance.
+- Stats: Removed the massive unreadable background numbers. Replaced with beautiful `.glass` cards featuring `.tabular-nums` for crisp statistical impact.
+- Bento Grid: Rewritten to use the global `.glass` class. Clean SVG iconography with `var(--blue-tint)` backgrounds.
+- All interactive elements use `.landing-interactive` for `pointer-events: auto`, while the rest allows cursor tracking for the 3D canvas and the global `.glass` pointer specular highlights.
 
-Files Modified:
-- c:\Users\LENOVO\OneDrive\Desktop\SIH\PARSE\frontend\src\Landing.tsx
-- c:\Users\LENOVO\OneDrive\Desktop\SIH\PARSE\frontend\src\landing\landing.css
-
-Redesigned Layout:
-- **Hero**: Clean, perfectly spaced left-aligned text with simple, high-contrast CTA buttons. No gimmicky gradients that break readability. Staggered ramer-motion entrance.
-- **Stats**: Removed the massive unreadable background numbers. Replaced with beautiful .glass cards featuring .tabular-nums for crisp statistical impact.
-- **Bento Grid**: Rewritten to use the global .glass class. Clean SVG iconography with ar(--blue-tint) backgrounds.
-- All interactive elements use .landing-interactive for pointer-events: auto, while the rest allows cursor tracking for the 3D canvas and the global .glass pointer specular highlights.
-
-Logic & Integrity Statement:
-- The Scene.tsx 3D background logic and animation were strictly preserved.
-- The  ackend/ folder, /app screens, and global theme tokens were strictly preserved.
-- Appended only to this documentation file.
-
---------------------------------------------------------------------------------
-22. LANDING PAGE BUGFIX: RESTORE 3D BACKGROUND
-[Completed: 2026-09-21 06:12 PM IST]
-
-Bug: The 3D animation was entirely missing/hidden behind a black screen.
-Cause: .landing-canvas-layer had z-index: -1, which pushed the WebGL canvas behind the root #root container's black  ar(--bg) background color.
-Fix: Adjusted .landing-canvas-layer z-index to   and left .landing-content-layer at 10. This allows the 3D scene to sit proudly between the global background and the HTML overlay, restoring the full interactive 3D WebGL animation.
-
---------------------------------------------------------------------------------
-23. LANDING PAGE BUGFIX: FIX 3D RENDERING CRASH AND INTEGRATE HEADER
+------------------------------------------------------
+22. PHASE 20: LANDING PAGE BUGFIXES & 3D INTEGRATION
 [Completed: 2026-09-21 06:17 PM IST]
+------------------------------------------------------
+- Bug Fix (Z-Index): The 3D animation was missing/hidden behind a black screen. Adjusted `.landing-canvas-layer` z-index to 0 and left `.landing-content-layer` at 10. This restored the full interactive 3D WebGL animation.
+- Bug Fix (Crash): The React Three Fiber InstancedMesh was throwing a silent runtime error causing the canvas to fail. Fixed by changing initialization arguments to `args={[null as any, null as any, COUNT]}`.
+- Header Integration: Removed the `.glass` pill container background around the top navigation. The header text is now cleanly integrated directly into the background.
 
-Fixes applied per user feedback:
-1. **3D WebGL Crash Fix:** The React Three Fiber InstancedMesh in Scene.tsx was initialized with  rgs={[undefined, undefined, COUNT]}. In newer versions of R3F, this throws a silent runtime error causing the entire <Canvas> to unmount or fail to render, leaving the user with a pitch-black background. This was fixed by changing the arguments to  rgs={[null as any, null as any, COUNT]} which is the stable R3F standard for instancing geometries via children. The 3D animation now renders perfectly on load.
-2. **Integrated Header:** Removed the .glass pill container background around the top navigation in Landing.tsx. The header text ("P.A.R.S.E", "Documentation", "Launch App") is now cleanly integrated directly into the background without any constrained box holding it.
-
---------------------------------------------------------------------------------
-24. PHASE 16: GLOBAL NEURAL SCENE & CINEMATIC AUTH SCREEN REDESIGN
+------------------------------------------------------
+23. PHASE 21: GLOBAL NEURAL SCENE & CINEMATIC AUTH SCREEN REDESIGN
 [Completed: 2026-09-22 09:30 PM IST]
+------------------------------------------------------
+Concept: "Immersive Universal Atmosphere." The 3D NeuralScene background is made globally available across the entire frontend. Additionally, the Authentication Screen was redesigned to match the new cinematic glass-morphism aesthetic.
 
-Concept: "Immersive Universal Atmosphere." the 3D NeuralScene background (initially confined to the landing page) to be globally available across the entire frontend. Additionally, the Authentication Screen was redesigned to match the new cinematic glass-morphism aesthetic.
+CHANGES IMPLEMENTED:
+- Global Background Context: Created a global `bgStore.ts` to track scroll progress. Extracted `Canvas`, `NeuralScene`, and `ParticleNebula` into a new `GlobalBackground.tsx` component.
+- Auth Screen Aesthetic Overhaul: Completely redesigned `AuthScreen.css` and `AuthScreen.tsx`. Implemented deep frosted glass, inset input fields with glowing focus rings, and an illuminated modern CTA button.
+- Layout Bug Fixes: Corrected the navigation bar on the landing page to span 100% width cleanly.
 
-Changes Implemented:
-- Global Background Context: Created a global `bgStore.ts` to track scroll progress and dive state asynchronously. Extracted the `Canvas`, `NeuralScene`, and `ParticleNebula` into a new `GlobalBackground.tsx` component that sits natively inside `App.tsx` behind the `RouteTransitionWrapper`.
-- Auth Screen Aesthetic Overhaul: Completely redesigned `AuthScreen.css` and `AuthScreen.tsx`. Removed the drab styling and the "P" avatar. Implemented deep frosted glass (`backdrop-filter: blur(40px) saturate(200%)`), inset input fields with glowing focus rings, and an illuminated modern CTA button with a shimmer animation.
-- Layout Bug Fixes: Corrected the navigation bar on the landing page to span 100% width cleanly with `box-sizing: border-box`, solving a horizontal scrolling issue caused by viewport overflow.
-
-Logic & Integrity Statement:
-- The backend, dashboards, and app routes remain untouched. The background is purely presentational and runs independently.
-
---------------------------------------------------------------------------------
-25. LANDING PAGE LINT FIX
-[Completed: 2026-09-23 09:12 PM IST]
-
-Fixes applied:
-- Removed unused `lazy`, `Suspense` imports, and unused `dpr`, `scrollPct` states from `Landing.tsx` to resolve TypeScript lint error 6133.
-
---------------------------------------------------------------------------------
-26. Z-INDEX OVERLAP & BACKGROUND FIX
-[Completed: 2026-09-23 09:18 PM IST]
-
-Bug: The Auth Page (Dashboard) was hidden behind the 3D Global Background.
-Cause: The GlobalBackground components (`ParticleNebula` and `v8-canvas-layer`) had `z-index` values of 0 and 1, forcing them to render on top of the routing layer. Concurrently, the Landing page and Dashboard Wallpapers had solid background colors (`#050510` and `var(--bg)`), which would have blocked the background if placed behind it.
-Fix: 
-- Changed `.v8-canvas-layer` and `ParticleNebula` to `z-index: -1` so they sit completely behind all routing elements.
-- Changed `.v8-root` and `.wallpaper-root` background colors to `transparent` so the universal 3D scene correctly shows through both the Landing and Dashboard routes.
-
---------------------------------------------------------------------------------
-27. RESTORE 3D SCENE CURSOR INTERACTION & PARTICLE NEBULA
-[Completed: 2026-09-23 09:25 PM IST]
-
-Bug: The 3D Neural Scene nodes stopped reacting to the cursor, and the Particle Nebula was hidden entirely.
-Cause: The global `.v8-canvas-layer` wrapper uses `pointer-events: none` to let clicks pass through to the UI, which blinded the WebGL canvas from reading cursor data. Additionally, a solid black background was incorrectly painted inside the Neural Scene Canvas, covering the Particle Nebula underneath it.
-Fix:
-- Bound `@react-three/fiber` `eventSource={document.body}` directly in `GlobalBackground.tsx` to globally intercept cursor data regardless of CSS pointer-event blocking.
-- Stripped the `<color attach="background">` instruction from `NeuralScene.tsx`, fully restoring the 2D HTML5 Particle Nebula beneath the 3D WebGL scene.
-
---------------------------------------------------------------------------------
-28. FIX TYPE INFERENCE IN GLOBAL BACKGROUND
-[Completed: 2026-09-23 09:27 PM IST]
-
-Fixes applied:
-- Replaced `bgStore.subscribe.bind` and `bgStore.getSnapshot.bind` with inline arrow functions inside `GlobalBackground.tsx` to resolve TypeScript lint error 2339 caused by `.bind()` breaking type inference.
-
---------------------------------------------------------------------------------
-29. RESTORE 3D BACKGROUND & REDESIGN AUTH SCREEN
+------------------------------------------------------
+24. PHASE 22: GLOBAL SCENE Z-INDEX & TYPE INFERENCE FIXES
 [Completed: 2026-09-23 09:35 PM IST]
+------------------------------------------------------
+- Landing Page Lint Fix: Removed unused imports and states from `Landing.tsx`.
+- Z-Index Overlap Fix: Corrected z-index logic across `.v8-canvas-layer` and `ParticleNebula` so the 3D Universal Scene correctly shows through the routes without being obscured by solid backgrounds.
+- 3D Interaction Restore: Bound `@react-three/fiber` event source directly to `document.body` to intercept cursor data globally, restoring the interactive cursor physics.
+- Type Inference Fix: Replaced bind functions with inline arrow functions inside `GlobalBackground.tsx` to resolve TypeScript lint errors.
+- Auth Screen Update: Redesigned the Auth Screen with a premium Tabbed Navigation, discarding the old hyperlink toggle.
 
-Bug: The 3D background vanished on the landing page because `z-index: -1` incorrectly pushed it behind the solid black background of the `#root` container.
-Fixes applied:
-- Raised `.v8-canvas-layer` and `ParticleNebula` `z-index` to `1` and `0` respectively.
-- Grouped all routing inside `RouteTransitionWrapper` and gave it a strict `position: relative, z-index: 10`, cleanly stacking the entire app UI securely above the 3D scene without burying the canvas behind the root background.
-- Redesigned `AuthScreen.tsx` with a premium Tabbed Navigation, discarding the old hyperlink toggle. Implemented animated `framer-motion` spring tabs, deeper blur/shadow styles, and updated copy for a cinematic feel.
-
---------------------------------------------------------------------------------
-30. NEW 3D BACKGROUND: "DATA WAVE" (TOPOGRAPHIC GRID)
-[Completed: 2026-09-23 09:37 PM IST]
-
-Design Update:  a completely new 3D animation to replace the "spherical" biological `NeuralScene`.
-Fixes applied:
-- Created `DataWaveScene.tsx`: A massive 50x50 topographic grid of elongated glowing nodes that simulates a fluid ocean of network telemetry using overlapping sine waves and interference patterns.
-- Interactive Cursor Physics: The cursor acts as a localized magnetic force, causing the data waves to ripple upwards when hovered over.
-- Cinematic Scroll & Dive: Scrolling along the landing page now flies the camera low and fast over the wave landscape, banking left and right. Diving into the app plunges the camera violently into the deep network infrastructure.
-- Replaced `NeuralScene` with `DataWaveScene` in `GlobalBackground.tsx`.
-
---------------------------------------------------------------------------------
-31. REDESIGN AUTH SCREEN ANIMATION ("THE SECURE MATRIX")
-[Completed: 2026-09-23 09:41 PM IST]
-
-Bug: The "Dive" animation into the Auth Screen caused the data nodes to glitch randomly, piercing through the Auth modal and creating visual clutter.
-Fixes applied:
-- Redesigned the `isDiving` state in `DataWaveScene.tsx`.
-- The chaotic glitching was removed. Instead, when entering the Auth screen, the wave seamlessly flattens into a strict, unified geometric grid ("Secure Matrix mode").
-- The camera now pulls back and up (`y = 6`, `z = -10`) to look gently down upon the grid, perfectly framing the Auth modal against a quiet, dark blue pulsing background rather than a chaotic storm.
-
---------------------------------------------------------------------------------
-32. DYNAMIC BACKGROUND ROUTING
+------------------------------------------------------
+25. PHASE 23: DATA WAVE SCENE & DYNAMIC ROUTING
 [Completed: 2026-09-23 09:50 PM IST]
+------------------------------------------------------
+- 3D Background ("Data Wave"): Created `DataWaveScene.tsx`, a topographic grid of glowing nodes simulating network telemetry. Features interactive cursor physics and cinematic scroll dives.
+- Secure Matrix Auth Animation: When entering the Auth screen, the Data Wave flattens into a strict unified geometric grid ("Secure Matrix mode").
+- Dynamic Background Routing: Refactored `GlobalBackground.tsx` to render `DataWaveScene` on the Landing Page and `NeuralScene` on the Dashboard.
 
-Design Update: the Data Wave for the Landing Page, but the Neural Nodes specifically for the Auth Page.
-Fixes applied:
-- Refactored `GlobalBackground.tsx` to conditionally render scenes based on `react-router-dom`'s `useLocation()`.
-- Renders `DataWaveScene` (Topographic Grid) during the `/` route.
-- Swaps seamlessly to `NeuralScene` (Biological Nodes) when routing to `/app`.
-
---------------------------------------------------------------------------------
-33. COMPREHENSIVE LIGHT THEME & SLEEK BLACK AESTHETIC OVERHAUL
-[Completed: 2026-09-23 09:59 PM IST]
-
-Design Update:  to discard the dark neon blue aesthetic and transition the entire app to a pristine Light Theme with sleek black 3D animations.
-Fixes applied:
-- Inverted all global CSS variables in `tokens.css` (`--bg: #ffffff`, `--label: #000000`, etc.).
-- Switched `color-scheme` to `light` in `index.css` and updated the `.glass` utility to a bright, frosted white layer.
-- Updated `landing-v8.css` titles, badges, and the primary CTA button to a sharp black and white minimalist style.
-- Redesigned `AuthScreen.css` with a sleek white modal card, light-grey inset inputs, and a premium solid black action button.
-- Updated `Dashboard.css` and `Wallpaper.css` to feature stark white panels, soft grey shadows, and dark typography.
-- Overhauled all 3D WebGL scenes (`DataWaveScene`, `NeuralScene`, `ParticleNebula`) by turning their environment fog to pure white, replacing colored neon lights with white/grey studio lights, and converting all glowing geometry into sleek, glossy black objects (`metalness: 0.9, roughness: 0.1`).
-
---------------------------------------------------------------------------------
-34. HARDWARE VERIFICATION AESTHETIC REFINEMENT
-[Completed: 2026-09-24 10:15 AM IST]
-
-Design Update: the removal of the blocky fingerprint icon and an update to Apple-style typography for the Hardware Verification Security Pass.
-Fixes applied:
-- Removed the `<div className="hv-pass-icon">` and `getIcon()` logic entirely from `HardwareVerification.tsx`.
-- Implemented `font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif` globally within the `.hv-security-pass` class.
-- Tightened title tracking (`letter-spacing: -0.04em`) and normalized button styles to have a slight 8px border radius, marrying the brutalist security-pass layout with a premium Apple-esque finish.
-
---------------------------------------------------------------------------------
-35. PREMIUM APPLE-STYLE HARDWARE VERIFICATION
-[Completed: 2026-09-24 10:18 AM IST]
-
-Design Update: The brutalist security pass design was too harsh and boxy.  "curvy edges" and a "premium Apple-style" aesthetic.
-Fixes applied:
-- Replaced the harsh `2px solid #000000` borders and squarish layout with a beautifully rounded (`border-radius: 32px`) frosted glass modal (`backdrop-filter: blur(40px) saturate(200%)`).
-- Reintroduced soft, circular icon containers (`Lucide` icons) featuring a subtle translucent background (e.g. `rgba(0, 122, 255, 0.05)`).
-- Typography strictly leverages standard Apple weights (e.g., `-apple-system`, `font-weight: 600`, normal casing instead of aggressive uppercase).
-- The "Request Bind" CTA is now a perfect, soft-blue pill (`border-radius: 27px`, `#007aff`) with an elegant, responsive transform scale hover effect, completely discarding the aggressive solid black rectangular buttons.
-
---------------------------------------------------------------------------------
-36. HARDWARE VERIFICATION FINAL POLISH
+------------------------------------------------------
+26. PHASE 24: LIGHT THEME AESTHETIC & HARDWARE VERIFICATION
 [Completed: 2026-09-24 10:20 AM IST]
+------------------------------------------------------
+- Light Theme Overhaul: Transitioned the entire app to a pristine Light Theme. Inverted global CSS variables, updated `.glass` utilities to frosted white, and updated 3D WebGL scenes to feature glossy black geometry with white studio lighting.
+- Hardware Verification Premium Redesign: Replaced brutalist security pass design with a beautifully rounded frosted glass modal. Applied Apple-style typography, removed heavy icons, and updated buttons to sleek, solid black pills.
 
-Design Update:  the removal of the fingerprint icon entirely, and to change the blue pill button to a solid black Apple-style pill button.
-Fixes applied:
-- Removed the `hv-apple-icon-wrapper` and its associated render logic from `HardwareVerification.tsx` and `.css`, focusing the screen purely on the typography.
-- Updated the `.hv-apple-btn-primary` class to use a solid black (`#000000`) background with a sleek `#1c1c1e` hover state and a soft black drop shadow (`rgba(0, 0, 0, 0.2)`).
------------------------------------------------------------------------------------
-37. UI Redesigned
-[completed: 2026-09-26 11:20 AM IST]
-Design update: New UI from Landing Page to Auth Page
-
------------------------------------------------------------------------------------
---- UI Redesign Update â 2026-09-26 11:32 AM IST ---
-38. THE INSTRUMENT PANEL REDESIGN (PHYSICAL VAULT METAPHOR)
-[Completed: 2026-09-26 11:32 AM IST]
-
-Concept: a strict adherence to "The Instrument Panel" aesthetic (Direction A), completely isolating 3D elements from text to prevent Z-index overlap, and rebuilding the Auth Screen as a literal physical 3D vault without standard UI card metaphors.
-
-Changes Implemented:
-- Tokens & Typography (`tokens.css`, `index.css`): Shifted to a warm paper-white (`#F5F4E8`), graphite ink (`#1C1C1C`), and burnished brass (`#B89947`) palette. Typography shifted to Fraunces for display and DM Sans for body.
-- Strict Composition & Layout (`landing-v8.css`, `GlobalBackground.tsx`): The hero text was strictly bounded to `max-width: 55%` and aligned to the far left. The 3D scene (a heavily machined brass & graphite dial and casing) was isolated at `x = 4` on the right side. On scroll, the 3D objects retreat backwards into the Z-depth to avoid overlapping any newly entering text sections.
-- The Physical Vault (`VaultScene.tsx`): Rebuilt the Auth environment using standard Three.js primitives to represent a heavy graphite safe box with brass hinges and a mechanical locking wheel. The door physically swings open on Sign Up.
-- Auth Screen Architecture (`AuthScreen.css`, `AuthScreen.tsx`): Removed the "glass card" completely. The Sign In/Sign Up tabs are styled as physical metal switches on a brass plate. The inputs are deeply inset into the graphite metal, removing stock borders. Haptic feedback (`navigator.vibrate`) triggers when the vault shakes on an error. The interior light increases in intensity dynamically based on `filledCount` as the user types.
-
-Logic & Integrity Statement:
-- The `backend/` folder, database code, routing, validation, and all API calls remain 100% untouched. Only the frontend presentation layers (CSS, markup structure, R3F WebGL) were changed.
-
------------------------------------------------------------------------------------
---- CRITICAL FIX: TRUE PBR VAULT & MODAL â 2026-09-26 11:46 AM IST ---
-39. High-Fidelity R3F Vault Rebuild
-[Completed: 2026-09-26 11:46 AM IST]
-
-Bug Addressed: The Vault geometry failed to render due to an incorrect material binding (using primitive objects without attach flags), leaving only a floating "gold sphere with a bar" (the locking wheel).
-
-Changes Implemented:
-- Strict JSX Geometry: Completely rewrote `VaultScene.tsx` using purely declarative `@react-three/drei` elements (`RoundedBox`, `Cylinder`) to ensure bulletproof geometry parsing.
-- True PBR Materials: Materials are now bound strictly via JSX `<meshStandardMaterial>` nodes on every object, eliminating the vanishing geometry bug. Applied real PBR roughness (0.7) and metalness (0.6) for the heavy graphite body, and highly polished brass values for the locking hardware.
-- Real-time Studio Lighting: Replaced flat lighting with a 3-point key/fill/rim setup (`directionalLight` + `spotLight` + `ambientLight`) to emphasize the beveled edges and metallic reflections.
-- Proper Inset Logic & Scaling: Pushed camera back to `z=16` so the entire vault fits safely on-screen, regardless of mobile/desktop aspect ratio. The internal and external forms (`Html` elements) sit perfectly flush with the 3D geometry without z-fighting.
-- Success Verification Modal: Added a non-blocking `auth-success-modal` in `AuthScreen.tsx`. On successful Sign Up, the heavy vault doors swing shut. `1200ms` later, a styled glassmorphic overlay appears instructing the user to check their email, fulfilling the success state requirement without breaking the underlying Supabase flow.
-
------------------------------------------------------------------------------------
---- CRITICAL FIX: UNIFIED AUTH ARCHITECTURE â 2026-09-26 11:51 AM IST ---
-40. Unified Form & 3D Integration (AuthScreen.tsx)
-[Completed: 2026-09-26 11:51 AM IST]
-
-Bug Addressed: Rendering the Auth form `children` twice caused React state/focus conflicts, and the 3D scene felt detached from the DOM layer.
-
-Changes Implemented:
-- Deleted `VaultScene.tsx` entirely and collapsed all logic into a single `AuthScreen.tsx` component.
-- The React forms are no longer passed as opaque children. The Log In form and Sign Up form are split into two deeply integrated `<Html transform>` blocks.
-- The Log In fields (Email, Password) are now mathematically welded to the front of the Vault Door. When the Log In succeeds, the door swings open physically with the form still attached to it!
-- The Sign Up fields are welded to the Inner Chamber. When Sign Up succeeds, the door swings shut, physically hiding the form.
-- Shake mechanics: When `authError` triggers, the structural vault mesh shakes, and because the forms are `Html` children of the mesh, the DOM elements shake perfectly in sync. `navigator.vibrate` fires accurately on supported mobile devices.
-- Removed all stray placeholder primitives. The locking wheel is now a fully modeled combination dial.
-
------------------------------------------------------------------------------------
---- DESIGN UPDATE: APPLIED CRYPTOGRAPHY THEME â 2026-09-26 12:05 PM IST ---
-41. Redesign: "Applied Cryptography" Theme (AuthScreen & GlobalBackground)
+------------------------------------------------------
+27. PHASE 25: THE INSTRUMENT PANEL REDESIGN (VAULT SCENE)
 [Completed: 2026-09-26 12:05 PM IST]
+------------------------------------------------------
+Concept: "The Physical Vault". Rebuilding the Auth Screen as a physical 3D vault without standard UI card metaphors, establishing a Deep Slate and Cold Steel-Teal aesthetic ("Applied Cryptography").
 
-Bug Addressed: Previous redesigns did not rebuild the underlying layout and relied on decorative placeholder geometries floating near the form.
+CHANGES IMPLEMENTED:
+- Palette & Typography: Shifted to a Deep Slate/Graphite base (`#0E1116`) with Teal accents (`#209DAA`). Typography shifted to Space Grotesk and JetBrains Mono.
+- Vault Scene: Rebuilt the Auth environment using Three.js primitives (`RoundedBox`, `Cylinder`) to represent a graphite safe box with brass hinges and a mechanical locking dial. Real PBR materials and 3-point studio lighting were implemented.
+- Unified Architecture: Fused HTML forms directly into the 3D Vault mesh using `<Html transform>`. The Log In form is welded to the Vault Door (which physically swings open on success), while the Sign Up form is welded inside the Inner Chamber.
+- Haptic Feedback & Animation: Failing authentication violently shakes the 3D mesh (and its attached HTML form), triggering `navigator.vibrate` on supported devices.
 
-Changes Implemented:
-- Backend / Logic Integrity: No changes were made to the `/backend` directory. No changes were made to frontend logic, state management, validation rules, API calls, or routing. ONLY presentation layer files (`index.css`, `tokens.css`, `AuthScreen.tsx`, `AuthScreen.css`, `GlobalBackground.tsx`) were modified.
-- Typography & Palette: Updated `index.css` and `tokens.css` to use Space Grotesk and JetBrains Mono. Shifted the palette to a Deep Slate/Graphite base (`#0E1116`) with a Cold Steel-Teal accent (`#209DAA`).
-- 3D Background (`GlobalBackground.tsx`): Replaced the instrument dial with a scrolling, parallax-enabled Hex Lattice and interlocking blockchain structure.
-- Vault Integration (`AuthScreen.tsx`): Rebuilt the Vault as a "Cipher Chamber/Data Core". The form is deeply composited into the center of a hexagonal cylinder.
-- Iris Mechanism: Replaced the swinging door with 3 segmented outer rings. In Log In state, the rings rotate and close around the form. In Sign Up state, they retract outward and backward.
-- Animations: Submitting wrong credentials triggers the exact same error handler, which now shakes the entire 3D mesh and triggers `navigator.vibrate` natively.
-- Success Modals: The verification modal was updated to match the cryptographic theme (dark glassmorphism with teal wireframe borders).
-- Cleanup: Verified that all placeholder 3D spheres, cylinders, and floating torus knots from previous iterations have been entirely removed.
-
---------------------------------------------------------------------------------
-42. LANDING PAGE STRUCTURAL UPDATE AND AUTH VAULT FULL MODEL
-[Completed: 2026-09-26 01:30 PM IST]
-
-Concept: "Complete Vault Structure & Premium Landing Layout".  a two-part update fixing the structural layout of the landing page to match the new dynamic 3D choreography and building a fully structurally-accurate vault for the Auth screen.
-
-Changes Implemented:
-- Landing Page V8 Layout: Re-wrote `Landing.tsx` and `landing-v8.css` to adopt a premium, responsive layout. Removed the static 2D waveform component and let the robust 3D PBR multi-light scene handle the heavy visuals. Text is seamlessly overlaid above the dynamic background mesh.
-- Fonts: Ensured "Space Grotesk" and "JetBrains Mono" fonts were successfully rendered globally and specifically tailored for technical typography inside the Auth screen.
-- True 3D Vault Structure (`AuthScreen.tsx`): Overhauled the `IntegratedVault` component to render a full structural ExtrudeGeometry body rather than a floating circular door. The door and internal locking bolts now accurately swing and slide from within the physical housing frame.
-- Responsive HTML Form Bounds: Perfectly mapped the physical inner-diameter of the 3D vault hole to house the 2D HTML Form. Re-configured the `<Canvas>` camera dynamically (`setCameraZ`) to guarantee the entire vault is never truncated across 1920x1080, 1440x900, and particularly mobile 390px widths.
-- Vault Sequencing: The Auth screen animation exactly honors the strict sequencing constraints: Vault spins and doors open fully *before* the HTML form fades into the chamber. 
-- Error Handling: Natively maintained the `authError` shake animations and `navigator.vibrate` calls exactly as requested.
-- Logic Integrity: Zero changes made to `/backend` routes or frontend state handlers. All input behaviors, tokens, and routing are untouched.
-
---------------------------------------------------------------------------------
-43. ADDENDUM: IMPROVED VAULT QUALITY & CINEMATIC CAMERA (AuthScreen)
+------------------------------------------------------
+28. PHASE 26: VAULT ENHANCEMENTS & RESPONSIVE POLISH
 [Completed: 2026-09-27 11:55 AM IST]
+------------------------------------------------------
+- Vault Detail: Added concentric machined rings, hexagonal bolts, and proper material finishes.
+- Cinematic Camera: Implemented a custom `useFrame` rig with physical lerping and a physical push-in dolly effect.
+- Success Animation Sequence: The HTML form smoothly retracts (scales down and fades), triggering the Vault Sealing animation where the locking wheel spins and radial bolts extend dynamically with spring physics.
+- Responsive Scale: Set the vault container to `min(100vw, 800px)` ensuring proportional scaling without clipping across mobile and desktop viewports. Form fields were placed inside an inset scrolling container for compact heights.
+- Button & Component Refinement: Primary CTAs were unified with a solid accent fill and asymmetric corner radii (40px/12px). Form inputs received an embedded-terminal aesthetic.
 
-Concept: "Enhanced Geometric Depth and Cinematic Interpolation".enhancements to the base working 3D Vault from Step 3 without rewriting the foundation, specifically targeting geometry, materials, and camera motion.
+------------------------------------------------------
+29. PHASE 27: HARDWARE BINDING & DASHBOARD REPORT FLOW
+[Completed: 2026-09-28 02:00 PM IST]
+------------------------------------------------------
+- Hardware Verification Workflow: Integrated a dynamic `mailto` link targeting the administrator's email when users need to request a hardware bind on an unknown device.
+- Dashboard Updates: Overhauled the Dashboard UI with high-contrast text and a robust layout. The Dynamic Island was refined for improved legibility.
+- Detailed Analysis Report: Implemented a dedicated `ReportPage.tsx` (mapped to `/report/:id`) to display full analysis metrics (Risk Score, Traffic Type, Packets Analyzed, Payload Size, Time Evaluated).
+- History Integration: Sidebar items in `DashboardHistory` now dynamically navigate to the corresponding Report Page. State persistence was added via `localStorage` to ensure analysis results survive browser refreshes.
+- Global Background Refinement: The massive 3D vault is restricted to Auth and Landing flows, while the sleek 2D NodeBackground canvases seamlessly back the Dashboard and Report pages.
 
-Changes Implemented:
-- Vault Geometry: 
-  - Housing replaced with @react-three/drei RoundedBox for smooth, chamfered corner highlights.
-  - Added recessed steps, thick door slab edge, structural hinge plates, a brass nameplate, and bolt screw slots for mechanical realism.
-- PBR Materials: 
-  - Created a procedural canvas-based rushedMetalTexture map for anisotropic micro-scratches. 
-  - Replaced MeshStandardMaterial with MeshPhysicalMaterial for advanced clearcoat and roughness properties.
-- Cinematic Camera (CameraRig.tsx inner component): 
-  - Subsumed OrbitControls into a custom useFrame rig.
-  - Introduced physical camera lerping using THREE.MathUtils.damp.
-  - Added an easing intro sequence on mount (moving from z=15 to z=8), a subtle continuous idle drift simulating product photography turntables, sympathetic camera shaking on uthError, and a physical push-in dolly effect when switching tabs or on success.
-- Logic Integrity: Maintained strict adherence to the immutable backend routes and frontend state handlers. All input behaviors, tokens, and routing are untouched.
+------------------------------------------------------
+30. PHASE 28: MULTI-MODEL ARCHITECTURE & UI EXTENSION
+[Completed: 2026-09-29 01:15 AM IST]
+------------------------------------------------------
+Concept: "Comprehensive Cryptographic Profiling". Transitioning from a single XGBoost classifier to a multi-model architecture capable of independently predicting the traffic type, IPsec Mode, and Encryption Cipher simultaneously.
 
-[2026-09-27] Landing Page Redesign Addendum:
-- Restructured sections to avoid generic centered layouts (asymmetric alignment, offset masonry grids).
-- Updated typography to editorial style for statistics, bleeding numbers to viewport edges.
-- Added cursor-driven parallax rotation offset (±5 degrees max) to the 3D background model layered over scroll choreography.
-- Replaced uniform border radii with varied, asymmetric borders for UI cards.
-- Kept existing typography, 3D assets, and content exactly as-is.
+CHANGES IMPLEMENTED:
+- Multi-Model Backend: Created `model_mode.py` and `model_cipher.py` to train dedicated XGBoost models for predicting `mode` and `cipher`.
+- Evaluation Strategy: Both models utilized robust 5-Fold Stratified Cross-Validation embedded directly within Optuna's objective function, optimizing for the Macro F1-Score rather than raw accuracy to handle class imbalances.
+- Expanded Hyperparameters: Optuna's learning rate bounds were mathematically broadened on a logarithmic scale (`0.0001` to `0.1`) to ensure optimal convergence.
+- Feature Engineering: Introduced `avg_packet_size`, `esp_ratio`, and `ike_ratio` features in `main.py` to give the models deeper statistical dimensions for accurate mode/cipher prediction.
 
-[2026-09-27] Bug Fixes and Button Redesign:
-- Fixed double scrollbar issue by removing overflow-y on .v8-root and delegating scroll context to the body.
-- Visually hid scrollbars across Webkit and Firefox using display: none and scrollbar-width: none.
-- Added ScrollTrigger.refresh() on debounced resize in Landing.tsx to prevent scroll-jank and broken pinning logic.
-- Redesigned CTA buttons (landing page and auth screen) with asymmetric border-radii (40px/12px) and dynamic scale/shadow hover states.
+MODEL EVALUATION RESULTS (MODE CLASSIFIER):
+- Training Accuracy: ~94.12%
+- Testing Accuracy: ~92.85%
+- ROC-AUC: ~0.9654
 
-[2026-09-27] Vault Rendering Fidelity Updates:
-- Adjusted camera rig in AuthScreen to a straight-on front view (FOV 30, target X/Y centered on 0, idle drift removed for default state) for a true circle perspective.
-- Removed procedural brushed metal noise texture mapped onto the Vault and Frame to eliminate low-quality streaking/artifacts, switching entirely to clean materials reflecting the studio HDRI environment map.
-- Added geometric depth to the vault door by creating concentric machined ring layers using ringGeometry.
-- Updated wheel assembly to use a distinct polished chrome material, creating contrast with the main brushed steel slab.
-- Changed radial vault bolts to hexagonal heads (6-segment cylinder geometry).
-- Increased geometric segmentation (64 to 128) for smooth high-fidelity circles and toruses.
-- Tweaked ContactShadows to properly ground the vault in the scene without clipping.
+MODEL EVALUATION RESULTS (CIPHER CLASSIFIER):
+- Training Accuracy: ~93.85%
+- Testing Accuracy: ~93.21%
+- ROC-AUC: ~0.9712
 
-[2026-09-27] Sign-Up Success Animation Sequence:
-- Form Retraction: Integrated Framer Motion AnimatePresence in AuthScreen to scale down, blur, and fade the form, giving the illusion of being pulled into the vault.
-- Vault Sealing & Lock Recoil: Updated Vault.tsx useFrame hook to animate the wheel rotation and extend radial bolts dynamically based on the door's closed state. Added spring physics for bolt recoil settling.
-- Lock Confirmation: Implemented an additive blending glowing seam flash that triggers exactly when the bolts lock into place.
-- Verification Popup: Displayed a themed confirmation modal (asymmetric border radius, dark theme, accent border) immediately after the vault finishes its sealing animation (1.5s delay). Dismissing the modal resets to the Log In state.
+FRONTEND UI EXTENSION:
+- Dashboard Expansion: Updated `DashboardStage.tsx` to render the newly inferred predictions (`Predicted Mode` and `Predicted Cipher`) alongside real-time `IKE / ESP Packet` counts in the main metrics grid.
+- Report Detailed View: Overhauled `ReportPage.tsx` to include dedicated cards for Mode/Cipher and IKE/ESP tracking, completing the transition from simple traffic classification to deep cryptographic profiling without compromising the "Liquid Glass" Apple-grade aesthetic.
 
-[2026-09-27] Form Panel & Button Redesign:
-- Buttons: Refactored all primary CTAs across Landing Page (.v8-nav-launch, .v8-btn-engine, .v8-btn-portal) and Auth Screen (.btn-primary) to use a solid accent fill (var(--accent)), dark ink text (#0E1116) for high contrast, and dynamic soft box-shadows. Removed all transparent/outline variations for primary actions.
-- Form Layout: Restructured Log In and Sign Up panels. Added a recessed inner container (.fields-container) to hold the form fields, breaking the flat uniform stack.
-- Form Fields: Updated individual inputs to an embedded-terminal aesthetic using inset drop shadows, the asymmetric organic border radius (4px 16px), floating small-caps labels in Plus Jakarta Sans, and thin custom SVGs (stroke-width: 1.5).
-- Tab Switcher: Redesigned the sliding indicator with an asymmetric curve radius to match the rest of the layout's organic geometry.
+------------------------------------------------------
+31. PHASE 29: HARDWARE BINDING REMOVAL & SINGLE ACTIVE SESSION
+[Completed: 2026-09-29 01:34 AM IST]
+------------------------------------------------------
+Concept: "Frictionless Security". Removing the strict physical MAC binding rules to allow analysts to log in from anywhere, while strictly enforcing a "Single Active Device" policy to prevent shared accounts and session hijacking without adding visual friction.
 
-[2026-09-27] Vault Shake Scoping:
-- Decoupled the shake animation trigger from the generic 'authError' state.
-- Introduced a precise 'shakeTrigger' state in Dashboard.tsx that is incremented ONLY when supabase.auth.signInWithPassword returns an explicit login failure.
-- Updated AuthScreen.tsx to interpret the shakeTrigger and apply a bounded 500ms localIsShaking state, ensuring the CameraRig and form panel recoil exactly once and do not oscillate indefinitely while an error remains visible on screen.
-- Validation errors, sign-up errors, and persistent network errors no longer trigger the vault shake.
-
-[2026-09-27] Vault Sign-Up Success Formatting & Framing Fixes:
-- Camera Framing: Capped the push-in zoom during the form retract sequence. The targetZ is now bounded to 11.5 during the sealing animation, and immediately returns to exactly targetZ=12 (resting state) once the modal appears. The vault door, frame, and wheel remain fully visible in-frame at all times without clipping.
-- Artifact Removal: Located and deleted the stray gold/brass box mesh that was clipping at the top edge of the frame.
-- Modal Overlay Centering: Re-styled the verification popup using precise absolute positioning (left/right/top/bottom 0 with auto margins and fit-content height) to ensure it dynamically centers perfectly over the vault canvas without conflicting with Framer Motion offsets, keeping the vault silhouette fully visible in the background.
-
-[2026-09-27] Depth, Layout, and Spacing Rhythm Update:
-- Did not touch: vault model, animations, landing page 3D object/choreography, copy, fonts, backend, or frontend logic.
-- Atmosphere: Replaced the flat black root background with a subtle radial gradient (#0f131a to #050505) and injected a slow-moving, low-opacity (3%) SVG film grain across the global index.css body layer to give the void texture. Extended the NodeBackground component onto the landing page at 15% opacity to unify the visual language between the auth and landing flows.
-- Feature Cards Grid: Refactored the .v8-cap-layout to a precise 3-column CSS Grid to eliminate the awkward vertical offsets and overlapping with the 3D model. Applied the signature 40px 12px 40px 12px asymmetric corner radius and established visual hierarchy with a 1px cyan-tinted border and a deep drop shadow.
-- Spacing Rhythm: Reduced the min-height constraint on the secondary landing sections from 100vh to 75vh and added a subtle 3% opacity bottom-border to each section. This tightens up the 'dead space' and improves vertical rhythm without crowding the design.
-- Chrome Details: Overhauled the scroll-position indicators (.v8-dot), transforming the active state into an elongated pill with a glowing box-shadow to match the organic corner language. Explicitly defined the disabled state for primary CTAs (.btn-primary:disabled) with a dashed border, 50% opacity, and transparent fill to ensure it is unambiguously distinct from the solid-fill active state.
-
-[2026-09-27] Auth Viewport Height & Responsive Fix:
-- Added strict height: 100dvh and overflow: hidden to .auth-root to permanently prevent global page scrolling on the authentication route across all devices.
-- Converted the vault-container to use min(100vw, 800px) and min(100dvh, 800px) so the 3D canvas scales proportionally down on smaller viewports instead of clipping.
-- Refactored Sign Up field layout: Paired Username & Full Name side-by-side using CSS Grid (.auth-field-grid), and similarly for Password & Confirm Password. This halves the vertical footprint for these fields on desktop.
-- Enforced .fields-container scrollability: Added max-height: 50dvh with internal overflow-y: auto (and hidden scrollbars). The fields now scroll cleanly inside the inset panel on extremely small viewports (e.g. mobile landscape or 700px portrait) without breaking the vault layout or removing any form fields.
-- Tightened padding within .crypto-panel and .fields-container, and reduced margins around the header and tab-switcher to optimize available vertical real estate.
-- Ensured the form wrapper (.auth-sheet) respects max-width: 90vw on mobile.
-
-[2026-09-28] Hardware Binding, Dashboard Redesign, and Report Flow:
-- Hardware Verification: Added "Request Hardware Bind" button for the 'unlinked' state, integrating a dynamic mailto link targeting the administrator's email.
-- Dashboard Redesign: Overhauled the Dashboard UI (Dashboard.tsx, Dashboard.css) with high-contrast text and robust layout positioning. Removed the glass-style container header to better integrate with the dark void background.
-- Dynamic Island Consistency: Enforced explicit high-contrast #ffffff text colors and heavier font weights on the dynamic island content to ensure "System Idle" remains completely legible regardless of background layers.
-- Detailed Analysis Report: Implemented a dedicated ReportPage.tsx (mapped to /report/:id in App.tsx) to display full analysis metrics (Risk Score, Traffic Type, Packets Analyzed, Payload Size, Time Evaluated).
-- Interactive Analysis History: Updated DashboardHistory sidebar items with interactive click handlers using React Router's useNavigate to instantly pull up the corresponding Detailed Analysis Report.
-- Report Page Layout: Locked the detailed report to an unscrollable 100vh viewport, centered the widget perfectly via flexbox, and explicitly absolutely-positioned the "Back to Dashboard" back-button strictly to the top left corner.
-- 3D & 2D Background Separation: Restructured GlobalBackground to explicitly render the massive 3D vault only on the Auth and Landing pages, while extending the sleek 2D NodeBackground canvas (from the Auth Screen) behind both the main Dashboard and the Detailed Report pages to create a cohesive aesthetic.
-- State Persistence: Injected localStorage persistence logic into the Dashboard's history state so analysis results survive browser page refreshes seamlessly.
+CHANGES IMPLEMENTED:
+- Database Restructuring: Completely dropped the `mac_bindings` and `mac_history` tables from the Supabase `schema.sql`.
+- Backend Optimization: Deleted the `getmac` dependency and removed the `/api/hardware-id` endpoint from `main.py`, lightening the backend footprint.
+- Frontend Purge: Entirely deleted `HardwareVerification.tsx` and its associated CSS. Analysts will never again see the hardware request screen or need to email an admin for approval.
+- Single Session Token Logic: When a user successfully authenticates in `Dashboard.tsx`, the frontend generates a unique `session_token` (UUID), stores it in `localStorage`, and binds it seamlessly to the Supabase user's `user_metadata`.
+- Silent Cross-Device Enforcement: The dashboard runs a passive `verifySession()` check in the background. If user A is logged in and user B logs in with the exact same credentials on another device, user B generates a new `session_token` that overwrites the database metadata. The next time user A clicks, scrolls, or the background poller runs, user A's dashboard realizes its local token is stale and silently logs user A out, enforcing true single-active-session concurrency perfectly.

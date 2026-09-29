@@ -1,0 +1,38 @@
+Here is a complete, step-by-step guide to setting up a free IPsec/IKEv2 connection using ProtonVPN natively within Windows. This will perfectly generate the exact ESP and IKE packets your model is trained to detect.
+
+Phase 1: Get Your Manual IKEv2 Credentials
+ProtonVPN uses a separate, highly secure username and password specifically for manual IPsec/IKEv2 connections (so you don't expose your main account password).
+
+Go to ProtonVPN.com and create a free account (if you don't have one).
+Log into your account dashboard at account.protonvpn.com.
+On the left-hand sidebar, click on Account.
+Scroll down until you see the section titled OpenVPN / IKEv2 username.
+Keep this page open. You will need to copy and paste this long, random Username and Password in the next phase.
+
+Phase 2: Get a Free Server Address
+Still on the ProtonVPN dashboard, click on Downloads in the left sidebar.
+Scroll down to the WireGuard / OpenVPN / IKEv2 configurations section.
+Select Windows, then choose the IKEv2 protocol.
+Pick a free server (e.g., from the United States, Netherlands, or Japan).
+You will see a Server Address that looks something like this: us-free-01.protonvpn.net. Copy this address.
+
+Phase 3: Configure Windows Built-In VPN
+On your PC, press the Windows Key, type VPN, and press Enter to open the VPN Settings menu.
+Click the button that says Add VPN (or Add a VPN connection).
+Fill out the form exactly like this:
+VPN provider: Windows (built-in)
+Connection name: Proton IPsec Test (or whatever you want to call it)
+Server name or address: Paste the server address you copied in Phase 2 (e.g., us-free-01.protonvpn.net)
+VPN type: Select IKEv2 from the dropdown menu.
+Type of sign-in info: User name and password
+User name: Paste the special IKEv2 username from Phase 1
+Password: Paste the special IKEv2 password from Phase 1
+Click Save.
+
+Phase 4: Test Your Dashboard
+Open your P.A.R.S.E Dashboard and ensure it is ready to capture on your main physical Wi-Fi or Ethernet adapter.
+Click Start Capture on your dashboard.
+Go back to your Windows VPN Settings, click on Proton IPsec Test, and hit Connect.
+Open a web browser, go to YouTube, and load a 4K video for about 30 seconds to generate a massive amount of encrypted payload data.
+Go to your P.A.R.S.E Dashboard and click Stop & Analyze.
+You should immediately see a massive spike in ESP packets, the Dashboard should predict IKE/IPsec, and your Machine Learning model should successfully infer the cryptographic parameters (like Mode and Cipher)!

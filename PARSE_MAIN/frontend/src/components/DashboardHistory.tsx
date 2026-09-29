@@ -6,6 +6,10 @@ interface PacketMetadata {
   config_id: string;
   traffic_type: string;
   packet_count: number;
+  ike_packet_count: number;
+  esp_packet_count: number;
+  mode: string;
+  cipher: string;
   pcap_size_bytes: number;
   risk_score: number;
   timestamp: string;

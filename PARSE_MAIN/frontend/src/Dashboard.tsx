@@ -5,7 +5,6 @@ import { Server, Activity } from 'lucide-react';
 import { supabase } from './supabaseClient';
 import { useNavigate } from 'react-router-dom';
 import AuthScreen from './components/AuthScreen';
-import HardwareVerification from './components/HardwareVerification';
 import DashboardStage from './components/DashboardStage';
 import DashboardHistory from './components/DashboardHistory';
 import Wallpaper from './components/Wallpaper';
@@ -17,6 +16,10 @@ interface PacketMetadata {
   config_id: string;
   traffic_type: string;
   packet_count: number;
+  ike_packet_count: number;
+  esp_packet_count: number;
+  mode: string;
+  cipher: string;
   pcap_size_bytes: number;
   risk_score: number;
   timestamp: string;
@@ -39,9 +42,8 @@ function Dashboard() {
   const [needsNameUpdate, setNeedsNameUpdate] = useState(false);
   const [shakeTrigger, setShakeTrigger] = useState(0);
 
-  // Dashboard & Hardware State
-  const [macStatus, setMacStatus] = useState<'loading' | 'authorized' | 'unauthorized' | 'unlinked' | 'abandoned' | 'error'>('loading');
-  const [currentMac, setCurrentMac] = useState('');
+  // Dashboard & Session State
+  const [sessionVerified, setSessionVerified] = useState(false);
 
   // Capture State
   const [isRunning, setIsRunning] = useState(false);
@@ -107,18 +109,35 @@ function Dashboard() {
     return () => subscription.unsubscribe();
   }, []);
 
+  const verifySession = async () => {
+    const { data: { user: currentUser }, error } = await supabase.auth.getUser();
+    if (error || !currentUser) {
+      handleLogout();
+      return;
+    }
+    const localToken = localStorage.getItem('parse_session_token');
+    const remoteToken = currentUser.user_metadata?.session_token;
+    
+    if (remoteToken && localToken && remoteToken !== localToken) {
+      // Session hijacked or logged in from another device
+      handleLogout();
+    } else {
+      setSessionVerified(true);
+    }
+  };
+
   useEffect(() => {
     if (user) {
-      verifyHardware();
+      verifySession();
     }
   }, [user]);
 
   useEffect(() => {
-    if (user && macStatus === 'authorized') {
+    if (user && sessionVerified) {
       checkStatus();
 
       const onFocus = () => {
-        verifyHardware();
+        verifySession();
       };
 
       window.addEventListener('focus', onFocus);
@@ -126,46 +145,7 @@ function Dashboard() {
         window.removeEventListener('focus', onFocus);
       };
     }
-  }, [user, macStatus]);
-
-  const verifyHardware = async () => {
-    setMacStatus('loading');
-    try {
-      const res = await axios.get(`${API_BASE}/hardware-id`, { timeout: 5000 });
-      const mac = res.data.mac_address;
-      setCurrentMac(mac);
-
-      const { data: binding } = await supabase
-        .from('mac_bindings')
-        .select('*')
-        .eq('mac_address', mac)
-        .maybeSingle();
-
-      if (binding) {
-        if (binding.user_id === user.id) {
-          setMacStatus('authorized');
-        } else {
-          setMacStatus('unauthorized');
-        }
-      } else {
-        const { data: history } = await supabase
-          .from('mac_history')
-          .select('*')
-          .eq('mac_address', mac)
-          .eq('user_id', user.id)
-          .maybeSingle();
-
-        if (history) {
-          setMacStatus('abandoned');
-        } else {
-          setMacStatus('unlinked');
-        }
-      }
-    } catch (err) {
-      console.error("Failed to verify hardware:", err);
-      setMacStatus('error');
-    }
-  };
+  }, [user, sessionVerified]);
 
   const validateAuth = () => {
     if (!email.includes('@')) return "Email must contain '@'";
@@ -208,11 +188,16 @@ function Dashboard() {
         setAuthError('Check your email for the confirmation link!');
       }
     } else {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
         setAuthError(error.message);
         setAuthCooldown(3);
         setShakeTrigger(prev => prev + 1);
+      } else if (data.user) {
+        const sessionToken = crypto.randomUUID();
+        localStorage.setItem('parse_session_token', sessionToken);
+        await supabase.auth.updateUser({ data: { session_token: sessionToken } });
+        setSessionVerified(true);
       }
     }
   };
@@ -235,8 +220,9 @@ function Dashboard() {
   };
 
   const handleLogout = async () => {
+    localStorage.removeItem('parse_session_token');
     await supabase.auth.signOut();
-    setMacStatus('loading');
+    setSessionVerified(false);
     navigate('/');
   };
 
@@ -370,16 +356,15 @@ function Dashboard() {
     );
   }
 
-  // --- HARDWARE VERIFICATION SCREEN ---
-  if (macStatus !== 'authorized') {
+  // --- SESSION VERIFICATION OVERLAY ---
+  if (!sessionVerified) {
     return (
       <Wallpaper riskState="idle">
-        <HardwareVerification
-          macStatus={macStatus}
-          currentMac={currentMac}
-          user={user}
-          handleLogout={handleLogout}
-        />
+        <div className="auth-layout">
+          <div className="status-icon-circle loading">
+            <Activity size={32} />
+          </div>
+        </div>
       </Wallpaper>
     );
   }

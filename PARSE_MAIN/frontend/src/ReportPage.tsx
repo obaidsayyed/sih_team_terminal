@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { ArrowLeft, ShieldAlert, ShieldCheck, Shield, Activity, HardDrive, Clock, FileDigit } from 'lucide-react';
+import { ArrowLeft, ShieldAlert, ShieldCheck, Shield, Activity, HardDrive, Clock, FileDigit, Bot, Loader2 } from 'lucide-react';
 import Wallpaper from './components/Wallpaper';
 import NodeBackground from './components/NodeBackground';
 import './Dashboard.css'; // Reuse dashboard styles where possible
@@ -9,6 +10,50 @@ export default function ReportPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const report = location.state?.report;
+  const [aiReport, setAiReport] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [aiReportError, setAiReportError] = useState('');
+
+  const generateAIReport = async () => {
+    setIsGenerating(true);
+    setAiReportError('');
+    try {
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+      if (!apiKey) {
+        throw new Error("Gemini API key is not configured in .env");
+      }
+      
+      const prompt = `Analyze the following network packet metadata and provide a brief, professional cybersecurity risk assessment (max 3 short paragraphs).
+      
+      Traffic Type: ${report.traffic_type}
+      Packets Captured: ${report.packet_count}
+      Payload Size: ${(report.pcap_size_bytes / 1024).toFixed(1)} KB
+      IKE Packets: ${report.ike_packet_count}
+      ESP Packets: ${report.esp_packet_count}
+      Predicted Mode: ${report.mode}
+      Predicted Cipher: ${report.cipher}
+      Risk Score: ${report.risk_score}/100
+      
+      Focus on whether this traffic appears anomalous, secure, or malicious.`;
+      
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }]
+        })
+      });
+      
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error?.message || 'Failed to generate report');
+      
+      setAiReport(data.candidates[0].content.parts[0].text);
+    } catch (err: any) {
+      setAiReportError(err.message);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   if (!report) {
     return (
@@ -105,6 +150,24 @@ export default function ReportPage() {
 
             <div className="metric-group" style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--label-2)' }}>
+                <Shield size={18} /> <span style={{ fontSize: 14, fontWeight: 600 }}>Mode / Cipher</span>
+              </div>
+              <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--label)', marginTop: 4, textTransform: 'uppercase' }}>
+                {report.mode !== 'N/A' && report.mode !== 'live' ? report.mode : 'N/A'} / {report.cipher !== 'N/A' ? report.cipher.replace('-', ' ') : 'N/A'}
+              </div>
+            </div>
+
+            <div className="metric-group" style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--label-2)' }}>
+                <Activity size={18} /> <span style={{ fontSize: 14, fontWeight: 600 }}>IKE / ESP Packets</span>
+              </div>
+              <div className="tabular-nums" style={{ fontSize: 22, fontWeight: 600, color: 'var(--label)' }}>
+                {report.ike_packet_count.toLocaleString()} / {report.esp_packet_count.toLocaleString()}
+              </div>
+            </div>
+
+            <div className="metric-group" style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--label-2)' }}>
                 <Clock size={18} /> <span style={{ fontSize: 14, fontWeight: 600 }}>Time Evaluated</span>
               </div>
               <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--label)', marginTop: 4 }}>
@@ -116,6 +179,51 @@ export default function ReportPage() {
           <div className="metric-group" style={{ marginTop: 16, padding: 20 }}>
              <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--label-2)', marginBottom: 8 }}>Configuration ID</div>
              <div className="mono" style={{ fontSize: 14, color: 'var(--label)' }}>{report.config_id}</div>
+          </div>
+
+          <div className="metric-group" style={{ marginTop: 16, padding: 20 }}>
+             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: aiReport ? 16 : 0 }}>
+               <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--label-2)', fontSize: 14, fontWeight: 600 }}>
+                 <Bot size={18} /> Gemini AI Analysis
+               </div>
+               {!aiReport && (
+                 <button 
+                   onClick={generateAIReport} 
+                   disabled={isGenerating}
+                   style={{ 
+                     background: isGenerating ? 'var(--bg-elev-3)' : 'var(--accent)', 
+                     color: isGenerating ? 'var(--label-3)' : '#111', 
+                     padding: '8px 16px', borderRadius: 16, 
+                     fontWeight: 600, fontSize: 13, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8
+                   }}
+                 >
+                   {isGenerating ? (
+                     <>
+                       <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }} style={{ display: 'flex' }}>
+                         <Loader2 size={14} />
+                       </motion.div>
+                       Generating...
+                     </>
+                   ) : 'Generate Report'}
+                 </button>
+               )}
+             </div>
+             
+             {aiReportError && (
+               <div style={{ color: 'var(--red)', fontSize: 13, background: 'rgba(218, 54, 51, 0.1)', padding: 12, borderRadius: 8, marginTop: 16 }}>
+                 {aiReportError}
+               </div>
+             )}
+             
+             {aiReport && (
+               <motion.div 
+                 initial={{ opacity: 0, height: 0 }} 
+                 animate={{ opacity: 1, height: 'auto' }} 
+                 style={{ color: 'var(--label)', fontSize: 14, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}
+               >
+                 {aiReport}
+               </motion.div>
+             )}
           </div>
 
         </motion.div>

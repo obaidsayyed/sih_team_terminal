@@ -7,9 +7,7 @@ import uuid
 import asyncio
 from datetime import datetime
 import pandas as pd
-import pyshark
 import xgboost as xgb
-from getmac import get_mac_address
 import uvicorn
 from fastapi import FastAPI, HTTPException, BackgroundTasks, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -44,19 +42,41 @@ SUPABASE_SECRET_KEY = os.environ.get("SUPABASE_SECRET_KEY")
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY) if SUPABASE_URL and SUPABASE_ANON_KEY else None
 supabase_admin: Client = create_client(SUPABASE_URL, SUPABASE_SECRET_KEY) if SUPABASE_URL and SUPABASE_SECRET_KEY else None
 
-# Initialize ML Model
+# Initialize ML Models
 model = None
 le_classes = None
+model_mode = None
+le_classes_mode = None
+model_cipher = None
+le_classes_cipher = None
+
 try:
     model = xgb.XGBClassifier()
-    # Path is relative to the backend folder
     model_path = os.path.join(os.path.dirname(__file__), 'xgboost_model.json')
     classes_path = os.path.join(os.path.dirname(__file__), 'label_encoder_classes.json')
-    model.load_model(model_path)
-    with open(classes_path, 'r') as f:
-        le_classes = json.load(f)
+    if os.path.exists(model_path):
+        model.load_model(model_path)
+        with open(classes_path, 'r') as f:
+            le_classes = json.load(f)
+        
+    model_mode = xgb.XGBClassifier()
+    model_mode_path = os.path.join(os.path.dirname(__file__), 'xgboost_model_mode.json')
+    classes_mode_path = os.path.join(os.path.dirname(__file__), 'label_encoder_mode.json')
+    if os.path.exists(model_mode_path):
+        model_mode.load_model(model_mode_path)
+        with open(classes_mode_path, 'r') as f:
+            le_classes_mode = json.load(f)
+            
+    model_cipher = xgb.XGBClassifier()
+    model_cipher_path = os.path.join(os.path.dirname(__file__), 'xgboost_model_cipher.json')
+    classes_cipher_path = os.path.join(os.path.dirname(__file__), 'label_encoder_cipher.json')
+    if os.path.exists(model_cipher_path):
+        model_cipher.load_model(model_cipher_path)
+        with open(classes_cipher_path, 'r') as f:
+            le_classes_cipher = json.load(f)
+            
 except Exception as e:
-    print(f"Warning: Could not load XGBoost model. Using dummy predictions. Error: {e}")
+    print(f"Warning: Could not load XGBoost models. Using dummy predictions. Error: {e}")
 
 capture_process = None
 pcap_filename = os.path.join(os.path.dirname(__file__), "temp_capture.pcap")
@@ -110,19 +130,6 @@ def get_active_interface():
 async def startup_event():
     if os.name == 'nt' and not is_admin():
         print("WARNING: Backend is not running as Administrator. Packet capture may fail if Npcap is restricted.")
-
-@app.get("/api/hardware-id")
-@limiter.limit("10/minute")
-def get_hardware_id(request: Request):
-    try:
-        mac = get_mac_address()
-        if mac:
-            mac = mac.upper()
-        else:
-            mac = "UNKNOWN"
-    except Exception:
-        mac = "UNKNOWN"
-    return {"mac_address": mac}
 
 def extract_token(request: Request):
     auth = request.headers.get("Authorization")
@@ -230,27 +237,31 @@ def process_pcap_and_score(token: str = None):
             except Exception:
                 pass
 
-        cap = pyshark.FileCapture(pcap_filename, tshark_path=tshark_path)
         packet_count = 0
         ike_packet_count = 0
         esp_packet_count = 0
         plain_icmp_count = 0
         pcap_size_bytes = os.path.getsize(pcap_filename)
         
-        for pkt in cap:
+        cmd = [tshark_path, "-r", pcap_filename, "-T", "fields", "-e", "frame.protocols"]
+        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
+        
+        for line in process.stdout:
             packet_count += 1
-            if hasattr(pkt, 'icmp'):
+            protocols = line.strip()
+            
+            if 'icmp' in protocols:
                 plain_icmp_count += 1
-            if hasattr(pkt, 'isakmp') or hasattr(pkt, 'ike'):
+            if 'isakmp' in protocols or 'ike' in protocols:
                 ike_packet_count += 1
-            if hasattr(pkt, 'esp'):
+            if 'esp' in protocols:
                 esp_packet_count += 1
                 
-            # Update progress dynamically
-            if packet_count % 5 == 0:
-                processing_state["progress"] = min(95, int((packet_count / total_packets) * 100))
+            # Update progress dynamically (less frequent to save CPU)
+            if packet_count % 500 == 0:
+                processing_state["progress"] = min(95, int((packet_count / max(total_packets, 1)) * 100))
                 
-        cap.close()
+        process.wait()
     except Exception as e:
         print(f"Error reading pcap: {e}")
         processing_state["status"] = "error"
@@ -259,25 +270,50 @@ def process_pcap_and_score(token: str = None):
         
     processing_state["progress"] = 95
     # Feature extraction
+    avg_packet_size = pcap_size_bytes / max(packet_count, 1)
+    esp_ratio = esp_packet_count / max(packet_count, 1)
+    ike_ratio = ike_packet_count / max(packet_count, 1)
+    
     features = {
         "packet_count": packet_count,
         "ike_packet_count": ike_packet_count,
         "esp_packet_count": esp_packet_count,
         "plain_icmp_count": plain_icmp_count,
-        "pcap_size_bytes": pcap_size_bytes
+        "pcap_size_bytes": pcap_size_bytes,
+        "avg_packet_size": avg_packet_size,
+        "esp_ratio": esp_ratio,
+        "ike_ratio": ike_ratio
     }
     
     traffic_type = "unknown"
+    predicted_mode = "N/A"
+    predicted_cipher = "N/A"
     
     # Predict using model (XGBoost ONLY classifies the type)
     if model and le_classes:
         try:
             df = pd.DataFrame([features])
-            pred_idx = model.predict(df)[0]
+            pred_idx = model.predict(df[['packet_count', 'ike_packet_count', 'esp_packet_count', 'plain_icmp_count', 'pcap_size_bytes']])[0]
             traffic_type = le_classes[pred_idx]
         except Exception as e:
             print(f"Error during prediction: {e}")
             traffic_type = "unknown"
+            
+    if model_mode and le_classes_mode:
+        try:
+            df_mode = pd.DataFrame([features])
+            pred_idx_mode = model_mode.predict(df_mode)[0]
+            predicted_mode = le_classes_mode[pred_idx_mode]
+        except Exception as e:
+            print(f"Error during mode prediction: {e}")
+
+    if model_cipher and le_classes_cipher:
+        try:
+            df_cipher = pd.DataFrame([features])
+            pred_idx_cipher = model_cipher.predict(df_cipher)[0]
+            predicted_cipher = le_classes_cipher[pred_idx_cipher]
+        except Exception as e:
+            print(f"Error during cipher prediction: {e}")
     else:
         # Dummy prediction (if model file is missing)
         if plain_icmp_count > 10:
@@ -297,9 +333,9 @@ def process_pcap_and_score(token: str = None):
         "filename": "live_capture.pcap",
         "config_id": "live_" + str(uuid.uuid4())[:8],
         "repeat_id": 1,
-        "mode": "live",
+        "mode": predicted_mode if predicted_mode != "N/A" else "live",
         "ike_version": "N/A",
-        "cipher": "N/A",
+        "cipher": predicted_cipher,
         "dh_group": "N/A",
         "pfs": "N/A",
         "traffic_type": traffic_type,

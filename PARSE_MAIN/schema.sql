@@ -46,22 +46,3 @@ CREATE INDEX idx_packet_metadata_risk ON packet_metadata(risk_score);
 CREATE INDEX idx_packet_metadata_type ON packet_metadata(traffic_type);
 CREATE INDEX idx_packet_metadata_timestamp ON packet_metadata(timestamp DESC);
 
--- 4. DEVICE (MAC) BINDING TABLES
--- Strict 1:1 binding between a user account and a physical device
-CREATE TABLE IF NOT EXISTS mac_bindings (
-    mac_address VARCHAR(255) PRIMARY KEY,
-    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    -- Ensure 1:1 mapping (one user can only have one active MAC)
-    CONSTRAINT unique_user_mac UNIQUE (user_id)
-);
-
--- Historical table to track abandoned MACs and prevent re-pairing
-CREATE TABLE IF NOT EXISTS mac_history (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    mac_address VARCHAR(255) NOT NULL,
-    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-    abandoned_at TIMESTAMPTZ DEFAULT NOW(),
-    -- A user can never pair back to a MAC they've abandoned
-    CONSTRAINT no_re_pairing UNIQUE (mac_address, user_id)
-);

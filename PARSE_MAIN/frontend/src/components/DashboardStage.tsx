@@ -1,10 +1,15 @@
 import { motion, AnimatePresence } from 'motion/react';
-import { Shield } from 'lucide-react';
+import { Shield, Bot, Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 interface PacketMetadata {
   config_id: string;
   traffic_type: string;
   packet_count: number;
+  ike_packet_count: number;
+  esp_packet_count: number;
+  mode: string;
+  cipher: string;
   pcap_size_bytes: number;
   risk_score: number;
   timestamp: string;
@@ -58,6 +63,58 @@ export default function DashboardStage({
 }: DashboardStageProps) {
   const isStartDisabled = isRunning || loading || captureCooldown > 0;
   const isStopDisabled = !isRunning || loading;
+  
+  const [aiReport, setAiReport] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [aiReportError, setAiReportError] = useState('');
+
+  // Reset AI report when new results arrive
+  useEffect(() => {
+    setAiReport(null);
+    setAiReportError('');
+  }, [currentResult]);
+
+  const generateAIReport = async () => {
+    if (!currentResult) return;
+    setIsGenerating(true);
+    setAiReportError('');
+    try {
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+      if (!apiKey) {
+        throw new Error("Gemini API key is not configured in .env");
+      }
+      
+      const prompt = `Analyze the following network packet metadata and provide a brief, professional cybersecurity risk assessment (max 3 short paragraphs).
+      
+      Traffic Type: ${currentResult.traffic_type}
+      Packets Captured: ${currentResult.packet_count}
+      Payload Size: ${(currentResult.pcap_size_bytes / 1024).toFixed(1)} KB
+      IKE Packets: ${currentResult.ike_packet_count}
+      ESP Packets: ${currentResult.esp_packet_count}
+      Predicted Mode: ${currentResult.mode}
+      Predicted Cipher: ${currentResult.cipher}
+      Risk Score: ${currentResult.risk_score}/100
+      
+      Focus on whether this traffic appears anomalous, secure, or malicious.`;
+      
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }]
+        })
+      });
+      
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error?.message || 'Failed to generate report');
+      
+      setAiReport(data.candidates[0].content.parts[0].text);
+    } catch (err: any) {
+      setAiReportError(err.message);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   const renderStage = () => {
     if (isProcessing) {
@@ -154,12 +211,69 @@ export default function DashboardStage({
               <span className="metric-value tabular-nums">{currentResult.packet_count.toLocaleString()}</span>
             </motion.div>
             <motion.div variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }} className="metric-row">
+              <span className="metric-label">IKE / ESP Packets</span>
+              <span className="metric-value tabular-nums">{currentResult.ike_packet_count.toLocaleString()} / {currentResult.esp_packet_count.toLocaleString()}</span>
+            </motion.div>
+            <motion.div variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }} className="metric-row">
+              <span className="metric-label">Predicted Mode</span>
+              <span className="metric-value">{currentResult.mode !== 'N/A' && currentResult.mode !== 'live' ? currentResult.mode.toUpperCase() : 'N/A'}</span>
+            </motion.div>
+            <motion.div variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }} className="metric-row">
+              <span className="metric-label">Predicted Cipher</span>
+              <span className="metric-value">{currentResult.cipher !== 'N/A' ? currentResult.cipher.toUpperCase().replace('-', ' ') : 'N/A'}</span>
+            </motion.div>
+            <motion.div variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }} className="metric-row">
               <span className="metric-label">Payload Size</span>
               <span className="metric-value tabular-nums">{(currentResult.pcap_size_bytes / 1024).toFixed(1)} KB</span>
             </motion.div>
             <motion.div variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }} className="metric-row">
               <span className="metric-label">Time Evaluated</span>
               <span className="metric-value">{new Date(currentResult.timestamp).toLocaleTimeString()}</span>
+            </motion.div>
+
+            <motion.div variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }} className="metric-row" style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 16, borderTop: '1px solid var(--border)', paddingTop: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--label-2)', fontSize: 13, fontWeight: 600 }}>
+                  <Bot size={16} /> Gemini AI Analysis
+                </div>
+                {!aiReport && (
+                  <button 
+                    onClick={generateAIReport} 
+                    disabled={isGenerating}
+                    style={{ 
+                      background: isGenerating ? 'var(--bg-elev-3)' : 'var(--accent)', 
+                      color: isGenerating ? 'var(--label-3)' : '#111', 
+                      padding: '6px 12px', borderRadius: 12, 
+                      fontWeight: 600, fontSize: 12, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6
+                    }}
+                  >
+                    {isGenerating ? (
+                      <>
+                        <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }} style={{ display: 'flex' }}>
+                          <Loader2 size={12} />
+                        </motion.div>
+                        Generating...
+                      </>
+                    ) : 'Generate'}
+                  </button>
+                )}
+              </div>
+              
+              {aiReportError && (
+                <div style={{ color: 'var(--red)', fontSize: 12, background: 'rgba(218, 54, 51, 0.1)', padding: 10, borderRadius: 8, width: '100%', textAlign: 'left' }}>
+                  {aiReportError}
+                </div>
+              )}
+              
+              {aiReport && (
+                <motion.div 
+                  initial={{ opacity: 0, height: 0 }} 
+                  animate={{ opacity: 1, height: 'auto' }} 
+                  style={{ color: 'var(--label)', fontSize: 13, lineHeight: 1.5, whiteSpace: 'pre-wrap', textAlign: 'left', width: '100%', background: 'var(--bg-elev-1)', padding: 12, borderRadius: 8 }}
+                >
+                  {aiReport}
+                </motion.div>
+              )}
             </motion.div>
           </motion.div>
         </motion.div>
