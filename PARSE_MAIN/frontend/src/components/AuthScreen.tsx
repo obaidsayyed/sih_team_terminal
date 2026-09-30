@@ -8,8 +8,8 @@ import { Suspense } from 'react';
 import Vault from './Vault';
 import './AuthScreen.css';
 
-const IconMail = ({ size = 20, className = "" }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="square" className={className}>
+const IconMail = ({ size = 20, className = "", style }: { size?: number, className?: string, style?: React.CSSProperties }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="square" className={className} style={style}>
     <rect x="2" y="4" width="20" height="16" />
     <path d="M2 6l10 7 10-7" />
   </svg>

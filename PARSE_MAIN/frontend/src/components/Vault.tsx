@@ -115,19 +115,19 @@ export default function Vault({ isOpen, isShaking }: VaultProps) {
       </mesh>
       
       {/* Deep Inner Chamber (Visible when open) */}
-      <mesh position={[0, 0, -1.0]}>
-        <cylinderGeometry args={[2.3, 2.3, 1.0, 64]} rotation={[Math.PI / 2, 0, 0]} />
+      <mesh position={[0, 0, -1.0]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[2.3, 2.3, 1.0, 64]} />
         <meshStandardMaterial color="#020202" side={THREE.BackSide} />
       </mesh>
 
       {/* Inner Chamber Recessed UI Panel (Frames the Sign Up form perfectly) */}
       <group position={[0, 0, -0.6]}>
-        <mesh>
-          <cylinderGeometry args={[1.45, 1.45, 0.1, 64]} rotation={[Math.PI / 2, 0, 0]} />
+        <mesh rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[1.45, 1.45, 0.1, 64]} />
           <primitive object={heavyFrameMaterial} attach="material" />
         </mesh>
-        <mesh position={[0, 0, 0.06]}>
-          <cylinderGeometry args={[1.4, 1.4, 0.01, 64]} rotation={[Math.PI / 2, 0, 0]} />
+        <mesh position={[0, 0, 0.06]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[1.4, 1.4, 0.01, 64]} />
           <meshStandardMaterial color="#000000" />
         </mesh>
       </group>
@@ -211,12 +211,12 @@ export default function Vault({ isOpen, isShaking }: VaultProps) {
 
           {/* Recessed Display Panel in Door Center for UI */}
           <group position={[0, 0, 0.35]}>
-            <mesh>
-              <cylinderGeometry args={[1.45, 1.45, 0.1, 64]} rotation={[Math.PI / 2, 0, 0]} />
+            <mesh rotation={[Math.PI / 2, 0, 0]}>
+              <cylinderGeometry args={[1.45, 1.45, 0.1, 64]} />
               <primitive object={heavyFrameMaterial} attach="material" />
             </mesh>
-            <mesh position={[0, 0, 0.05]}>
-              <cylinderGeometry args={[1.4, 1.4, 0.01, 64]} rotation={[Math.PI / 2, 0, 0]} />
+            <mesh position={[0, 0, 0.05]} rotation={[Math.PI / 2, 0, 0]}>
+              <cylinderGeometry args={[1.4, 1.4, 0.01, 64]} />
               <meshStandardMaterial color="#000000" />
             </mesh>
             {/* Bevel/Frame around the screen */}
