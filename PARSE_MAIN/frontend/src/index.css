@@ -108,3 +108,42 @@ button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* Mobile Blocker Styles */
+#mobile-blocker {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647; /* Maximum z-index to ensure it's on top of everything */
+  background: radial-gradient(circle at center, #0f131a 0%, #050505 100%);
+  color: #fff;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 2rem;
+  font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+}
+
+#mobile-blocker h2 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: #fff;
+}
+
+#mobile-blocker p {
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.7);
+  max-width: 400px;
+  line-height: 1.5;
+}
+
+/* Show blocker and hide app for screens smaller than 1024px */
+@media (max-width: 1024px) {
+  #mobile-blocker {
+    display: flex;
+  }
+  #root {
+    display: none !important;
+  }
+}
