@@ -7,8 +7,8 @@ import websockets
 import subprocess
 
 # Configuration
-BACKEND_WS_URL = "wss://sih-team-terminal.onrender.com/api/agent/ws"
-BACKEND_UPLOAD_URL = "https://sih-team-terminal.onrender.com/api/capture/upload"
+BACKEND_WS_URL = "wss://sih-team-terminal-wlvv.onrender.com/api/agent/ws"
+BACKEND_UPLOAD_URL = "https://sih-team-terminal-wlvv.onrender.com/api/capture/upload"
 PCAP_FILENAME = "agent_capture.pcap"
 
 capture_process = None

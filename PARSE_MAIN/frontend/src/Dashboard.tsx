@@ -10,7 +10,7 @@ import DashboardHistory from './components/DashboardHistory';
 import Wallpaper from './components/Wallpaper';
 import NodeBackground from './components/NodeBackground';
 import './Dashboard.css';
-const API_BASE = import.meta.env.VITE_API_URL || 'https://sih-team-terminal.onrender.com/api';
+const API_BASE = import.meta.env.VITE_API_URL || 'https://sih-team-terminal-wlvv.onrender.com/api';
 
 interface PacketMetadata {
   config_id: string;
