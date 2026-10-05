@@ -3,7 +3,7 @@ PROJECT DOCUMENTATION: P.A.R.S.E (Packet Analyser and Risk Scoring Engine)
 ======================================================
 
 TEAM DETAILS:
-- Team Name: Team Terminal
+- Team Name: Terminal
 - Problem Statement (PS) No: SIH26160
 - Document Last Updated: 2026-09-19 02:15 AM IST
 
@@ -362,7 +362,8 @@ DEPENDENCIES ADDED:
 CONSTRAINTS ENFORCED:
 - Zero changes to /app, Dashboard.tsx, or any backend logic.
 - Responsive from 320px to 2560px without horizontal scroll.
-- Implemented prefers-reduced-motion fallbacks (cross-fade transitions, static canvas).------------------------------------------------------
+- Implemented prefers-reduced-motion fallbacks (cross-fade transitions, static canvas).
+------------------------------------------------------
 19. PHASE 17: LANDING PAGE REDESIGN (V5, 3D)
 [Completed: 2026-09-21 05:58 PM IST]
 ------------------------------------------------------
@@ -577,7 +578,8 @@ CHANGES IMPLEMENTED:
 - Pre-Auth Onboarding Flow: Added a sequential onboarding screen for first-time visitors before they can authenticate. It instructs them to download Wireshark (for Npcap/tshark drivers) and then download the Local Agent script.
 - Agent Disconnect Fallback UI: Implemented a custom error popup in the dashboard. If the user clicks "Start Capture" while their local agent is disconnected, they receive a targeted popup allowing them to re-download the agent and reminding them to run it with Administrator permissions.
 - Agent Hosting: Added a /api/agent/download GET endpoint to the FastAPI backend, allowing the frontend to dynamically serve the gent.py script.
-- Dependency Management: Successfully generated equirements.txt for the backend and updated package-lock.json via npm for the frontend.
+- Dependency Management: Successfully generated 
+equirements.txt for the backend and updated package-lock.json via npm for the frontend.
 - API Throttling & Rate Limiting: Verified that endpoints are strictly rate-limited using slowapi, and that frontend buttons correctly enforce a silent 3-5 second throttle (via uthCooldown and captureCooldown) to prevent UI spamming.
 
 ------------------------------------------------------
@@ -590,4 +592,5 @@ CHANGES IMPLEMENTED:
 - PyInstaller Build: Compiled gent.py using PyInstaller into a standalone, single-file Windows Executable (ParseAgent.exe). 
 - Administrator Binding: Embedded the --uac-admin flag into the executable to inherently request Windows Administrator privileges upon launch, guaranteeing Npcap driver access without relying on the user to right-click and "Run as Admin".
 - Endpoint Redirection: Updated /api/agent/download in main.py to securely serve dist/ParseAgent.exe instead of the raw Python script, ensuring end-users do not need Python or Pip installed to use the P.A.R.S.E ecosystem.
-- Dependency Lock: Finalized equirements.txt with all PyInstaller dependencies required for the Python 3.13 venv.
+- Dependency Lock: Finalized 
+equirements.txt with all PyInstaller dependencies required for the Python 3.13 venv.
