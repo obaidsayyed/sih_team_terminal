@@ -2,45 +2,59 @@
 
 **Theme:** Cybersecurity and Blockchain  
 **Problem Statement (PS) No:** SIH26160  
-**Team Name:** Team Terminal  
+**Team Name:** Terminal  
+
+---
+
+## Live Deployment Links 🚀
+- **Frontend (Dashboard):** [https://parse-beige.vercel.app](https://parse-beige.vercel.app)
+- **Backend (API):** [https://sih-team-terminal-wlvv.onrender.com](https://sih-team-terminal-wlvv.onrender.com)
 
 ---
 
 ## About The Project
 
-**P.A.R.S.E** is a full-stack, machine learning-powered cybersecurity tool designed to peer into the "black box" of encrypted network traffic. By analyzing payload-agnostic metadata (packet counts, timing, and protocol distributions), P.A.R.S.E accurately classifies and scores the risk of live network traffic without ever needing to decrypt the payload.
+**P.A.R.S.E** is a full-stack, machine learning-powered cybersecurity tool designed to classify encrypted network traffic (e.g., distinguishing between Web, Video, VoIP, ICMP) based purely on packet statistics, without decrypting the payload. 
 
-Originally built as a standalone XGBoost script, P.A.R.S.E has evolved into a robust distributed architecture featuring a premium React frontend and a cloud-ready C2 architecture.
+It uses a completely decoupled architecture where an **XGBoost Classifier** predicts the traffic type, while a custom **Risk Scoring Engine (RSE)** evaluates anomalies (like mismatching payload sizes vs. packet volumes) to assign a dynamic risk score from 0-100.
 
-### Key Features
-* **Zero-Trust Single Active Session:** Implements strict cryptographic token validation enforcing a "Single Active Device" policy to prevent shared accounts and session hijacking without adding visual friction.
-* **Deep Cryptographic Profiling:** Accurately infers advanced metadata such as `Predicted Mode` (Main, Aggressive, Quick) and `Predicted Cipher` (AES, 3DES, ChaCha20) using XGBoost model chaining.
-* **Live Packet Capture:** Securely triggers local `tshark` instances from the web interface via a standalone Python/PyInstaller agent, seamlessly analyzing active Wi-Fi traffic.
-* **Real-time Risk Engine:** Feeds captured packet statistics into a dynamic XGBoost engine to accurately classify traffic (Web, VoIP, ICMP, Video) and assign live risk scores.
-* **Premium Dashboard:** A modern, glassmorphism-inspired React dashboard featuring micro-animations, bento-box layouts, and real-time capture telemetry.
-* **Robust Security:** Fortified with strict Rate Limiting (`slowapi`), Row Level Security (Supabase), and anti-brute-force UI cooldown timers.
+### Dataset & ML Training
+- **Data Collection:** ~233,870 Total Records. 65% captured from a live Alpine Linux VirtualBox testbed, 35% synthetically generated.
+- **The "Noisy" Methodology:** To prevent the model from learning "perfect, unrealistic boundaries", we induced severe chaos into 70% of the dataset (Protocol overlap, IKE jitter, random volume spikes). 
+- **Results:** By training on this 70-30 Noisy-Clean distribution via Optuna hyperparameter tuning, the final model achieved an incredibly robust **93.63% Testing Accuracy** (ROC-AUC: ~0.9883).
 
 ---
 
 ## Architecture Overview
 
-P.A.R.S.E is designed with a **Cloud-Managed Local Agent** architecture to securely bypass browser sandboxing constraints while maintaining a premium SaaS experience.
+P.A.R.S.E uses a **Cloud-Managed Local Agent** architecture to securely bypass browser sandboxing constraints while maintaining a premium SaaS experience.
 
-1. **Frontend (Vite / React):** The user-facing dashboard where analysts manage captures and review history. Hosted in the cloud.
-2. **Backend (FastAPI Cloud C2):** A scalable cloud backend that coordinates active agents via WebSocket tunneling, runs ML parsing on uploaded metadata, and aggregates scores.
-3. **Local Agent (ParseAgent.exe):** A lightweight, zero-dependency PyInstaller executable running locally on the analyst's machine. It binds to the C2 server, securely manages raw socket execution (`tshark`), and streams results back to the cloud.
+1. **Frontend (Vite / React):** The user-facing dashboard where analysts manage captures and review history. Hosted on Vercel.
+2. **Backend (FastAPI Cloud C2):** A scalable cloud backend that coordinates active agents via WebSocket tunneling, runs ML parsing on uploaded metadata, and aggregates scores. Hosted on Render via Docker.
+3. **Local Agent (ParseAgent.exe):** A lightweight, zero-dependency PyInstaller executable running locally on the analyst's machine. It securely triggers `tshark` to sniff Wi-Fi traffic and streams results back to the cloud.
 4. **Database (Supabase):** Handles JWT authentication, Row Level Security, and persists all captured metadata and risk reports.
+
+---
+
+## Prerequisites & Required Downloads
+
+To run P.A.R.S.E locally or use the Local Agent, you **MUST** install the following dependencies:
+
+1. **Wireshark & TShark:** You must install Wireshark on your machine for the local agent to sniff packets.
+   - [Download Wireshark](https://www.wireshark.org/download.html) (Ensure `tshark` is selected during installation).
+2. **Npcap Driver:** Required for Wireshark to capture raw network traffic on Windows.
+   - [Download Npcap](https://npcap.com/)
+3. **Node.js:** For running the frontend locally.
+   - [Download Node.js](https://nodejs.org/)
+4. **Python 3.12+:** For running the backend or agent source code locally.
+   - [Download Python](https://www.python.org/downloads/)
 
 ---
 
 ## Getting Started
 
-### Prerequisites
-* **Node.js** (for the frontend)
-* **Python 3.13** (for the backend)
-* **TShark** / Wireshark installed on the end-user machine (for the Local Agent)
-
 ### 1. Start the Cloud Backend
+For local development, you can run the FastAPI backend natively:
 ```bash
 cd backend
 python -m venv venv
@@ -48,7 +62,7 @@ venv\Scripts\activate
 pip install -r requirements.txt
 uvicorn main:app --reload
 ```
-*The backend will boot up on `http://localhost:8000`. It requires an active `.env` file containing `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SECRET_KEY`.*
+*Note: The backend requires an active `.env` file containing `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SECRET_KEY`.*
 
 ### 2. Start the Frontend (Dashboard)
 ```bash
@@ -56,14 +70,14 @@ cd frontend
 npm install
 npm run dev
 ```
-*The frontend will boot up on `http://localhost:5173`.*
 
 ### 3. Run the Local Agent
-End-users download `ParseAgent.exe` directly from the dashboard UI. For development, you can run the agent manually:
+End-users download the compiled `ParseAgent.exe` directly from the dashboard UI. For development, you can run the agent manually from the source:
 ```bash
 cd backend
 python agent.py
 ```
+*Note: Ensure you have administrator rights to allow Npcap to bind to your network adapters.*
 
 ---
 
